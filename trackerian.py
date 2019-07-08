@@ -19,13 +19,15 @@ def parse_arguments(args):
     return vars(parser.parse_args(args))
 
 
-def begin_activity():
+def begin_activity(activity_name):
     """."""
     pass
 
 def main():
     """."""
     args = parse_arguments(sys.argv[1:])
+    if args['begin']:
+        begin_activity(args['begin'])
 
 
 if __name__ == '__main__':

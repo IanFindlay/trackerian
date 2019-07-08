@@ -33,8 +33,8 @@ class TestParseArguments(unittest.TestCase):
 class TestArgumentFunctionCalls(unittest.TestCase):
 
     # User begins timing a new activity by passing --begin argument
-    @patch('trackerian.parse_arguments')
     @patch('trackerian.begin_activity')
+    @patch('trackerian.parse_arguments')
     def test_begin_activity_called(self, mocked_parse, mocked_begin):
         """."""
         mocked_parse.return_value = {'begin': 'Activity Name'}
@@ -43,6 +43,9 @@ class TestArgumentFunctionCalls(unittest.TestCase):
         self.assertTrue(mocked_begin.called)
 
 
+class TestBeginActivityFunction(unittest.TestCase):
+
+    pass
 
 if __name__ == '__main__':
     unittest.main()
