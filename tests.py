@@ -2,6 +2,7 @@
 
 """ User Story Testing for  Trackerian - a commandline time tracker."""
 
+from datetime import datetime
 import io
 import sys
 import unittest
@@ -30,22 +31,28 @@ class TestParseArguments(unittest.TestCase):
         self.assertEqual({'begin': 'Activity Name'}, args)
 
 
-class TestArgumentFunctionCalls(unittest.TestCase):
-
-    # User begins timing a new activity by passing --begin argument
-    @patch('trackerian.begin_activity')
-    @patch('trackerian.parse_arguments')
-    def test_begin_activity_called(self, mocked_parse, mocked_begin):
-        """."""
-        mocked_parse.return_value = {'begin': 'Activity Name'}
-        trackerian.main()
-
-        self.assertTrue(mocked_begin.called)
-
-
 class TestBeginActivityFunction(unittest.TestCase):
 
-    pass
+    def test_begin_activity_writes_activity_name_to_file(self):
+        """."""
+        output_file = io.StringIO()
+        trackerian.begin_activity('Activity Name', output_file)
+        output_file.seek(0)
+        written = output_file.read()
+
+        self.assertIn('Activity Name', written)
+
+    @patch('trackerian.get_current_time_and_format')
+    def test_begin_activity_writes_date_and_time_to_file(self, mocked_date):
+        """."""
+        mocked_date.return_value = '2000-02-20 10:10:01'
+        output_file = io.StringIO()
+        trackerian.begin_activity('Activity Name', output_file)
+        output_file.seek(0)
+        written = output_file.read()
+
+        self.assertIn('2000-02-20 10:10:01', written)
+
 
 if __name__ == '__main__':
     unittest.main()
