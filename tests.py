@@ -2,17 +2,17 @@
 
 """ User Story Testing for  Trackerian - a commandline time tracker."""
 
-from datetime import datetime
 import io
 import sys
 import unittest
 import unittest.mock
-from unittest.mock import call, patch
+from unittest.mock import patch
 
 import trackerian
 
 
 class TestParseArguments(unittest.TestCase):
+    """Tests for trackerians parse_arguments()."""
 
     # User runs trackerian.py from commandline and receives help instructions
     def test_no_argument_prints_help(self):
@@ -39,6 +39,7 @@ class TestParseArguments(unittest.TestCase):
 
 
 class TestMain(unittest.TestCase):
+    """Tests for trackerian's main()."""
 
     def setUp(self):
         trackerian.Activity.instances = []

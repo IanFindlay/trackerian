@@ -6,6 +6,7 @@ import argparse
 import datetime
 import sys
 
+
 def parse_arguments(args):
     """."""
     parser = argparse.ArgumentParser(description="Commandline Time Tracker")
@@ -13,11 +14,9 @@ def parse_arguments(args):
     parser.add_argument('-f', '--finish', action='store_true',
                         help='finished timing a task')
 
-
     if not args:
         parser.print_help()
-        sys.exit
-
+        sys.exit()
 
     return vars(parser.parse_args(args))
 
@@ -31,16 +30,11 @@ class Activity():
         self.start = get_current_time()
 
         Activity.instances.append(self)
-        update_instances()
-
 
 
 def get_current_time():
     """Return current time datetime object."""
     return datetime.datetime.now()
-
-
-
 
 
 def main():
