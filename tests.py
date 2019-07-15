@@ -16,7 +16,7 @@ class TestParseArguments(unittest.TestCase):
 
     # User runs trackerian.py from commandline and receives help instructions
     def test_no_argument_prints_help(self):
-        """Test the response of invoking the program with no arguments."""
+        """Invoking the program with no arguments prints help."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
         trackerian.parse_arguments([])
@@ -25,35 +25,45 @@ class TestParseArguments(unittest.TestCase):
 
     # From help finds that --begin TASKNAME is how to start timing a task
     def test_begin_argument_stores_activity_name_in_return(self):
-        """Test that using begin with keyword results in dict entry for it."""
+        """--begin stores argument in args dictionary."""
         args = trackerian.parse_arguments(['--begin', 'Activity Name'])
 
-        self.assertEqual({'begin': 'Activity Name'}, args)
+        self.assertEqual(args['begin'], 'Activity Name')
+
+    # After some time finishes the task with the finish argument
+    def test_finish_argument_stores_true_in_end_return(self):
+        """--finish stores True boolean in args dictionary."""
+        args = trackerian.parse_arguments(['--finish'])
+
+        self.assertTrue(args['finish'])
 
 
-class TestBeginActivityFunction(unittest.TestCase):
+class TestMain(unittest.TestCase):
 
-    def test_begin_activity_writes_activity_name_to_file(self):
+    def setUp(self):
+        trackerian.Activity.instances = []
+
+    # Starts activity 'Activity' through --begin argument
+    @patch('trackerian.parse_arguments')
+    def test_begin_instantiates_activity_with_arg_name(self, mocked_args):
+        """New member of Activity class with argument name instantiated."""
+        mocked_args.return_value = {'begin': 'Activity', 'finish': True}
+        trackerian.main()
+
+        self.assertEqual(trackerian.Activity.instances[0].name, 'Activity')
+
+    # Ends activity through --finish
+    @patch('trackerian.parse_arguments')
+    def test_finish_adds_end_to_previous_instance(self, mocked_args):
         """."""
-        output_file = io.StringIO()
-        trackerian.begin_activity('Activity Name', output_file)
-        output_file.seek(0)
-        written = output_file.read()
+        mocked_args.return_value = {'begin': None, 'finish': True}
+        trackerian.main()
 
-        self.assertIn('Activity Name', written)
-
-    @patch('trackerian.get_current_time_and_format')
-    def test_begin_activity_writes_date_and_time_to_file(self, mocked_date):
-        """."""
-        mocked_date.return_value = '2000-02-20 10:10:01'
-        output_file = io.StringIO()
-        trackerian.begin_activity('Activity Name', output_file)
-        output_file.seek(0)
-        written = output_file.read()
-
-        self.assertIn('2000-02-20 10:10:01', written)
+        self.assertTrue(trackerian.Activity.instances[0].end)
 
 
 if __name__ == '__main__':
     unittest.main()
+
+
 
