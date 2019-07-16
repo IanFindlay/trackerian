@@ -2,6 +2,7 @@
 
 """ User Story Testing for  Trackerian - a commandline time tracker."""
 
+import datetime
 import io
 import sys
 import unittest
@@ -57,14 +58,35 @@ class TestMain(unittest.TestCase):
     @patch('trackerian.parse_arguments')
     def test_finish_adds_end_to_previous_instance(self, mocked_args):
         """."""
+        trackerian.Activity('To be ended')
         mocked_args.return_value = {'begin': None, 'finish': True}
         trackerian.main()
 
-        self.assertTrue(trackerian.Activity.instances[0].end)
+        self.assertTrue(trackerian.Activity.instances[0].endtime)
+
+
+class TestEndActivityActivityClassMethod(unittest.TestCase):
+    """."""
+
+    def test_endtime_variable_set_to_datetime(self):
+        """."""
+        trackerian.Activity('End Me')
+        trackerian.Activity.instances[0].end_activity()
+        endtime = trackerian.Activity.instances[0].endtime
+
+        self.assertTrue(isinstance(endtime, datetime.date))
+
+    @patch('trackerian.get_current_time')
+    def test_duration_set_to_correct_time(self, mocked_time):
+        """Use str representation of timedelta object to check duration."""
+        mocked_time.side_effect = [datetime.datetime(2010, 10, 10, 10, 10, 10),
+                                   datetime.datetime(2010, 10, 10, 10, 40, 00)]
+        trackerian.Activity('Duration Check')
+        trackerian.Activity.instances[0].end_activity()
+        duration = trackerian.Activity.instances[0].duration
+
+        self.assertEqual(str(duration), '0:29:50')
 
 
 if __name__ == '__main__':
     unittest.main()
-
-
-
