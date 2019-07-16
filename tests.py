@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" User Story Testing for  Trackerian - a commandline time tracker."""
+""" User Story Unit Testing for  Trackerian - a commandline time tracker."""
 
 import datetime
 import io
@@ -66,7 +66,7 @@ class TestMain(unittest.TestCase):
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
-    """."""
+    """Tests for end_activity method of Activity class."""
 
     def test_endtime_variable_set_to_datetime(self):
         """."""
