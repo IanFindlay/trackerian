@@ -4,7 +4,6 @@
 
 import datetime
 import io
-import sys
 import unittest
 import unittest.mock
 from unittest.mock import patch
@@ -16,10 +15,10 @@ class TestParseArguments(unittest.TestCase):
     """Tests for trackerians parse_arguments() function."""
 
     # User runs trackerian.py from commandline and receives help instructions
-    def test_no_arguments_prints_help(self):
-        captured_output = capture_sys_stdout_in_string_io()
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_no_arguments_prints_help(self, mocked_stdout):
         trackerian.parse_arguments([])
-        self.assertIn("usage:", captured_output.getvalue())
+        self.assertIn("usage:", mocked_stdout.getvalue())
 
     # From help finds that --begin TASKNAME is how to start timing a task
     def test_begin_argument_stores_activity_name_in_returned_dict(self):
@@ -46,12 +45,19 @@ class TestMain(unittest.TestCase):
         trackerian.main()
         self.assertEqual(trackerian.Activity.instances[0].name, 'Activity')
 
+    @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_begin_prints_confirmation_of_task_start(self, mocked_args):
+    def test_begin_prints__about_task_start(self, mocked_args, mocked_stdout):
         mocked_args.return_value = edit_args_dict('begin', 'Activity Printed')
-        captured_output = capture_sys_stdout_in_string_io()
         trackerian.main()
-        self.assertIn('Activity Printed', captured_output.getvalue())
+        self.assertIn('Activity Printed', mocked_stdout.getvalue())
+
+    @patch('trackerian.parse_arguments')
+    def test_begin_ends_previous_process_if_not_ended(self, mocked_args):
+        trackerian.Activity('Begin Should End This')
+        mocked_args.return_value = edit_args_dict('begin', 'New Actvity')
+        trackerian.main()
+        self.assertTrue(trackerian.Activity.instances[0].end)
 
     # Ends activity through --finish
     @patch('trackerian.parse_arguments')
@@ -90,18 +96,12 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         duration = trackerian.Activity.instances[0].duration
         self.assertEqual(duration, datetime.timedelta(0, 1800))
 
+    @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.get_current_time')
-    def test_confirmation_of_activity_duration_printed(self, mocked_time):
+    def test_activity_duration_printed(self, mocked_time, mocked_stdout):
         mocked_time.return_value = datetime.datetime(2010, 10, 10, 11, 40, 00)
-        captured_output = capture_sys_stdout_in_string_io()
         trackerian.Activity.instances[0].end_activity()
-        self.assertIn('1:30:00', captured_output.getvalue())
-
-
-def capture_sys_stdout_in_string_io():
-    """Capture the systems standard output - facilitates assertion tests."""
-    sys.stdout = io.StringIO()
-    return sys.stdout
+        self.assertIn('1:30:00', mocked_stdout.getvalue())
 
 
 def edit_args_dict(key, new_value):

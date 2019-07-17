@@ -82,6 +82,8 @@ def main():
         sys.exit()
 
     if args['begin']:
+        if Activity.instances and not Activity.instances[-1].end:
+            Activity.instances[-1].end_activity()
         Activity(args['begin'])
         print(Activity.instances[-1])
 
