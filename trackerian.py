@@ -8,8 +8,18 @@ import sys
 
 
 def parse_arguments(args):
-    """."""
-    parser = argparse.ArgumentParser(description="Commandline Time Tracker")
+    """Parse arguments and return them in a dictionary.
+
+    Args:
+        args (list): List of arguments and associated values to parse.
+
+    Returns:
+        None if args argument evaluates to False.
+
+        Dictionary of arguments and their post-parsed values.
+
+    """
+    parser = argparse.ArgumentParser(description="Command Line Time Tracker")
     parser.add_argument('-b', '--begin', metavar='activity',
                         help='begin timing a task')
     parser.add_argument('-f', '--finish', action='store_true',
@@ -22,37 +32,51 @@ def parse_arguments(args):
     return vars(parser.parse_args(args))
 
 
-class Activity():
-    """Class representing an activity."""
+class Activity:
+    """Class representing an activity.
+
+        Attributes:
+            instances (list): Class attribute to track instantiated members.
+
+            name (str): Name of the activity.
+            start (datetime): Time activity started (instantiated).
+            end (datetime): Time activity ended (end_activity method).
+            duration (timedelta): Time difference between start and end.
+
+    """
     instances = []
 
     def __init__(self, name):
-        """Initialise activity with argument name."""
+        """Initialise member of Activity class.
+
+        Args:
+            name (str): Name of the activity.
+
+        """
         self.name = name
         self.start = get_current_time()
-        self.endtime = None
+        self.end = None
         self.duration = None
 
         Activity.instances.append(self)
 
     def __str__(self):
-        """."""
         return '{} currently being tracked.'.format(self.name)
 
     def end_activity(self):
-        """Set endtime and duration then print end confirmation."""
-        self.endtime = get_current_time()
-        self.duration = self.endtime - self.start
+        """Set end and duration then print end confirmation."""
+        self.end = get_current_time()
+        self.duration = self.end - self.start
         print('{} ended - duration was {}'.format(self.name, self.duration))
 
 
 def get_current_time():
-    """Return current time datetime object."""
+    """Return datetime object of the current time."""
     return datetime.datetime.now()
 
 
 def main():
-    """."""
+    """Coordinate creation and time tracking of activities."""
     args = parse_arguments(sys.argv[1:])
     if not args:
         sys.exit()
