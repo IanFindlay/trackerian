@@ -24,6 +24,8 @@ def parse_arguments(args):
                         help='begin timing a task')
     parser.add_argument('-f', '--finish', action='store_true',
                         help='finish timing a task')
+    parser.add_argument('-c', '--current', action='store_true',
+                        help='print current status of activity tracking')
 
     if not args:
         parser.print_help()
@@ -61,13 +63,20 @@ class Activity:
         Activity.instances.append(self)
 
     def __str__(self):
-        return '{} currently being tracked.'.format(self.name)
+        return 'Tracking {} for {}.'.format(
+            self.name, str(self.return_current_duration())
+        )
 
     def end_activity(self):
         """Set end and duration then print end confirmation."""
         self.end = get_current_time()
         self.duration = self.end - self.start
         print('{} ended - duration was {}'.format(self.name, self.duration))
+
+    def return_current_duration(self):
+        """Calculate and return timedelta of activity time tracked so far."""
+        current_time = get_current_time()
+        return current_time - self.start
 
 
 def get_current_time():
@@ -89,6 +98,12 @@ def main():
 
     if args['finish']:
         Activity.instances[-1].end_activity()
+
+    if args['current']:
+        if Activity.instances[-1].end:
+            print("Currently Not Tracking an Activity")
+        else:
+            print(Activity.instances[-1])
 
 
 if __name__ == '__main__':

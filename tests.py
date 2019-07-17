@@ -28,7 +28,12 @@ class TestParseArguments(unittest.TestCase):
     # After some time finishes the task with the finish argument
     def test_finish_argument_stores_true_boolean_in_returned_dict(self):
         args = trackerian.parse_arguments(['--finish'])
-        self.assertTrue(args['finish'])
+        self.assertEqual(args['finish'], True)
+
+    # User passes -current argument to check if an activity is being tracked
+    def test_current_argument_stores_true_boolean_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--current'])
+        self.assertEqual(args['current'], True)
 
 
 class TestMain(unittest.TestCase):
@@ -65,7 +70,36 @@ class TestMain(unittest.TestCase):
         trackerian.Activity('To End')
         mocked_args.return_value = edit_args_dict('finish', True)
         trackerian.main()
-        self.assertTrue(trackerian.Activity.instances[0].end)
+        self.assertTrue(trackerian.Activity.instances[-1].end)
+
+    # Checks on current activity using --current and info is printed
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_current_prints_activity_name_if_not_ended(self, mocked_args,
+                                                       mocked_stdout):
+        trackerian.Activity('Current Activity')
+        mocked_args.return_value = edit_args_dict('current', True)
+        trackerian.main()
+        self.assertIn('Current Activity', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_current_prints_current_duration_if_not_ended(self, mocked_args,
+                                                          mocked_stdout):
+        trackerian.Activity('Current Activity')
+        mocked_args.return_value = edit_args_dict('current', True)
+        trackerian.main()
+        self.assertIn('0:00:', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_current_prints_message_if_no_activity_running(self, mocked_args,
+                                                           mocked_stdout):
+        trackerian.Activity('Ended Activity')
+        trackerian.Activity.instances[-1].end = True
+        mocked_args.return_value = edit_args_dict('current', True)
+        trackerian.main()
+        self.assertIn('Not Tracking', mocked_stdout.getvalue())
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
@@ -104,6 +138,20 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         self.assertIn('1:30:00', mocked_stdout.getvalue())
 
 
+class TestReturnCurrentDurationActivityClassMethod(unittest.TestCase):
+    """Tests for return_current_duration method of Activity class."""
+
+    @patch('trackerian.get_current_time')
+    def test_returns_accurate_timedelta_object(self, mocked_time):
+        mocked_time.side_effect = [
+            datetime.datetime(2012, 12, 12, 12, 30, 00),
+            datetime.datetime(2012, 12, 12, 13, 00, 00)
+        ]
+        trackerian.Activity('Check Duration')
+        duration = trackerian.Activity.instances[-1].return_current_duration()
+        self.assertEqual(duration, datetime.timedelta(0, 1800))
+
+
 def edit_args_dict(key, new_value):
     """Edit defaulted argument dictionary and return it.
 
@@ -118,6 +166,7 @@ def edit_args_dict(key, new_value):
     defaulted_args_dict = {
         'begin': None,
         'finish': False,
+        'current': False,
     }
     defaulted_args_dict[key] = new_value
     return defaulted_args_dict
