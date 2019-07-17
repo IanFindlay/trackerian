@@ -23,10 +23,11 @@ def parse_arguments(args):
 
 
 class Activity():
-    """."""
+    """Class representing an activity."""
     instances = []
 
     def __init__(self, name):
+        """Initialise activity with argument name."""
         self.name = name
         self.start = get_current_time()
         self.endtime = None
@@ -34,10 +35,15 @@ class Activity():
 
         Activity.instances.append(self)
 
-    def end_activity(self):
+    def __str__(self):
         """."""
+        return '{} currently being tracked.'.format(self.name)
+
+    def end_activity(self):
+        """Set endtime and duration then print end confirmation."""
         self.endtime = get_current_time()
         self.duration = self.endtime - self.start
+        print('{} ended - duration was {}'.format(self.name, self.duration))
 
 
 def get_current_time():
@@ -53,6 +59,7 @@ def main():
 
     if args['begin']:
         Activity(args['begin'])
+        print(Activity.instances[-1])
 
     if args['finish']:
         Activity.instances[-1].end_activity()

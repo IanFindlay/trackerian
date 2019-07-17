@@ -49,10 +49,20 @@ class TestMain(unittest.TestCase):
     @patch('trackerian.parse_arguments')
     def test_begin_instantiates_activity_with_arg_name(self, mocked_args):
         """New member of Activity class with argument name instantiated."""
-        mocked_args.return_value = {'begin': 'Activity', 'finish': True}
+        mocked_args.return_value = {'begin': 'Activity', 'finish': None}
         trackerian.main()
 
         self.assertEqual(trackerian.Activity.instances[0].name, 'Activity')
+
+    @patch('trackerian.parse_arguments')
+    def test_begin_prints_confirmation_of_task_start(self, mocked_args):
+        """."""
+        mocked_args.return_value = {'begin': 'Print Activity', 'finish': None}
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        trackerian.main()
+
+        self.assertIn('Print Activity', captured_output.getvalue())
 
     # Ends activity through --finish
     @patch('trackerian.parse_arguments')
@@ -67,6 +77,10 @@ class TestMain(unittest.TestCase):
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
     """Tests for end_activity method of Activity class."""
+
+    def setUp(self):
+        """."""
+        trackerian.Activity.instances = []
 
     def test_endtime_variable_set_to_datetime(self):
         """."""
@@ -86,6 +100,18 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         duration = trackerian.Activity.instances[0].duration
 
         self.assertEqual(str(duration), '0:29:50')
+
+    @patch('trackerian.get_current_time')
+    def test_confirmation_of_activity_duration_printed(self, mocked_time):
+        """."""
+        mocked_time.side_effect = [datetime.datetime(2012, 12, 12, 12, 12, 00),
+                                   datetime.datetime(2012, 12, 12, 13, 20, 00)]
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        trackerian.Activity('Confirmation Check')
+        trackerian.Activity.instances[0].end_activity()
+
+        self.assertIn('1:08:00', captured_output.getvalue())
 
 
 if __name__ == '__main__':
