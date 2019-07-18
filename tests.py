@@ -74,7 +74,7 @@ class TestMainFinish(unittest.TestCase):
 
     # Ends activity through --finish
     @patch('trackerian.parse_arguments')
-    def test_finish_adds_end_variable_to_last_instance(self, mocked_args):
+    def test_finish_adds_end_to_last_instance_if_not_ended(self, mocked_args):
         trackerian.Activity('To End')
         mocked_args.return_value = edit_args_dict('finish', True)
         trackerian.main()
@@ -162,6 +162,18 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         mocked_time.return_value = datetime.datetime(2010, 10, 10, 11, 40, 00)
         trackerian.Activity.instances[0].end_activity()
         self.assertIn('1:30:00', mocked_stdout.getvalue())
+
+    def test_does_not_modify_end_if_already_set(self):
+        trackerian.Activity.instances[0].end_activity()
+        initial_end = trackerian.Activity.instances[0].end
+        trackerian.Activity.instances[0].end_activity()
+        self.assertEqual(trackerian.Activity.instances[0].end, initial_end)
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_prints_message_if_activity_already_ended(self, mocked_stdout):
+        trackerian.Activity.instances[0].end_activity()
+        trackerian.Activity.instances[0].end_activity()
+        self.assertIn('already finished', mocked_stdout.getvalue())
 
 
 class TestReturnCurrentDurationActivityClassMethod(unittest.TestCase):

@@ -69,9 +69,12 @@ class Activity:
 
     def end_activity(self):
         """Set end and duration then print end confirmation."""
-        self.end = get_current_time()
-        self.duration = self.end - self.start
-        print('{} ended - duration was {}'.format(self.name, self.duration))
+        if not self.end:
+            self.end = get_current_time()
+            self.duration = self.end - self.start
+            print('{} ended - Duration = {}'.format(self.name, self.duration))
+        else:
+            print('Tracking of {} is already finished.'.format(self.name))
 
     def return_current_duration(self):
         """Calculate and return timedelta of activity time tracked so far."""
