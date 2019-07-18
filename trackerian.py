@@ -97,13 +97,19 @@ def main():
         print(Activity.instances[-1])
 
     if args['finish']:
-        Activity.instances[-1].end_activity()
+        try:
+            Activity.instances[-1].end_activity()
+        except IndexError:
+            print("No activities have been tracked.")
 
     if args['current']:
-        if Activity.instances[-1].end:
-            print("Currently Not Tracking an Activity")
-        else:
-            print(Activity.instances[-1])
+        try:
+            if Activity.instances[-1].end:
+                print("Currently Not Tracking an Activity")
+            else:
+                print(Activity.instances[-1])
+        except IndexError:
+            print("No activities have been tracked.")
 
 
 if __name__ == '__main__':

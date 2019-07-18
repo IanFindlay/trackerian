@@ -36,8 +36,8 @@ class TestParseArguments(unittest.TestCase):
         self.assertEqual(args['current'], True)
 
 
-class TestMain(unittest.TestCase):
-    """Tests for trackerian's main()."""
+class TestMainBegin(unittest.TestCase):
+    """Tests for how trackerian's main() deals with the begin arg."""
 
     def tearDown(self):
         """Restore trackerian's Activity instances to a blank list."""
@@ -64,6 +64,14 @@ class TestMain(unittest.TestCase):
         trackerian.main()
         self.assertTrue(trackerian.Activity.instances[0].end)
 
+
+class TestMainFinish(unittest.TestCase):
+    """Tests for how trackerian's main() deals with the finish arg."""
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to a blank list."""
+        trackerian.Activity.instances = []
+
     # Ends activity through --finish
     @patch('trackerian.parse_arguments')
     def test_finish_adds_end_variable_to_last_instance(self, mocked_args):
@@ -71,6 +79,19 @@ class TestMain(unittest.TestCase):
         mocked_args.return_value = edit_args_dict('finish', True)
         trackerian.main()
         self.assertTrue(trackerian.Activity.instances[-1].end)
+
+    @patch('trackerian.parse_arguments')
+    def test_finish_raises_index_error_when_no_instances(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('finish', True)
+        self.assertRaises(IndexError, trackerian.main())
+
+
+class TestMainCurrent(unittest.TestCase):
+    """Tests for how trackerian's main() deals with the current arg."""
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to a blank list."""
+        trackerian.Activity.instances = []
 
     # Checks on current activity using --current and info is printed
     @patch('sys.stdout', new_callable=io.StringIO)
@@ -100,6 +121,11 @@ class TestMain(unittest.TestCase):
         mocked_args.return_value = edit_args_dict('current', True)
         trackerian.main()
         self.assertIn('Not Tracking', mocked_stdout.getvalue())
+
+    @patch('trackerian.parse_arguments')
+    def test_current_raises_index_error_when_no_instances(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('current', True)
+        self.assertRaises(IndexError, trackerian.main())
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
