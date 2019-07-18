@@ -26,6 +26,8 @@ def parse_arguments(args):
                         help='finish timing a task')
     parser.add_argument('-c', '--current', action='store_true',
                         help='print current status of activity tracking')
+    parser.add_argument('-s', '--summary', action='store_true',
+                        help='print summary of tracked activities')
 
     if not args:
         parser.print_help()
@@ -57,22 +59,31 @@ class Activity:
         """
         self.name = name
         self.start = get_current_time()
+        self.start_str = str_format_datetime(self.start)
         self.end = None
+        self.end_str = None
         self.duration = None
 
         Activity.instances.append(self)
 
     def __str__(self):
-        return 'Tracking {} for {}.'.format(
-            self.name, str(self.return_current_duration())
+        if not self.end:
+            return '({} - ~) {} Tracking | Current Duration {}'.format(
+                self.start_str, self.name,
+                str(self.return_current_duration())
+            )
+
+        return '({} - {}) {} Finished | Duration: {}'.format(
+            self.start_str, self.end_str, self.name, str(self.duration)
         )
 
     def end_activity(self):
         """Set end and duration then print end confirmation."""
         if not self.end:
             self.end = get_current_time()
+            self.end_str = str_format_datetime(self.end)
             self.duration = self.end - self.start
-            print('{} ended - Duration = {}'.format(self.name, self.duration))
+            print('{} finished. Duration: {}'.format(self.name, self.duration))
         else:
             print('Tracking of {} is already finished.'.format(self.name))
 
@@ -85,6 +96,19 @@ class Activity:
 def get_current_time():
     """Return datetime object of the current time."""
     return datetime.datetime.now()
+
+
+def str_format_datetime(datetime_object):
+    """Format datetime object into string.
+
+    Args:
+        datetime_object (datetime): Datetime time object.
+
+    Returns:
+        String of datetime object formatted HH:MM:SS.
+
+    """
+    return datetime_object.strftime('%H:%M:%S')
 
 
 def main():
@@ -113,6 +137,19 @@ def main():
                 print(Activity.instances[-1])
         except IndexError:
             print("No activities have been tracked.")
+
+    if args['summary']:
+        total_time = datetime.timedelta(0)
+        for activity in Activity.instances:
+            if activity.duration:
+                total_time += activity.duration
+            else:
+                total_time += activity.return_current_duration()
+
+        print('Activities Tracked: {} | Total Time Tracked {}'.format(
+            len(Activity.instances), total_time))
+        for activity in Activity.instances:
+            print(activity)
 
 
 if __name__ == '__main__':

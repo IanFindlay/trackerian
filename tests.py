@@ -14,7 +14,7 @@ import trackerian
 class TestParseArguments(unittest.TestCase):
     """Tests for trackerians parse_arguments() function."""
 
-    # User runs trackerian.py from commandline and receives help instructions
+    # User runs trackerian.py from command line and receives help instructions
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_no_arguments_prints_help(self, mocked_stdout):
         trackerian.parse_arguments([])
@@ -25,22 +25,27 @@ class TestParseArguments(unittest.TestCase):
         args = trackerian.parse_arguments(['--begin', 'Activity Name'])
         self.assertEqual(args['begin'], 'Activity Name')
 
-    # After some time finishes the task with the finish argument
+    # After some time finishes the task with the --finish argument
     def test_finish_argument_stores_true_boolean_in_returned_dict(self):
         args = trackerian.parse_arguments(['--finish'])
         self.assertEqual(args['finish'], True)
 
-    # User passes -current argument to check if an activity is being tracked
+    # User passes --current argument to check if an activity is being tracked
     def test_current_argument_stores_true_boolean_in_returned_dict(self):
         args = trackerian.parse_arguments(['--current'])
         self.assertEqual(args['current'], True)
+
+    # User passes --summary to see information about past/current activities
+    def test_summary_argument_stores_true_boolean_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--summary'])
+        self.assertEqual(args['summary'], True)
 
 
 class TestMainBegin(unittest.TestCase):
     """Tests for how trackerian's main() deals with the begin arg."""
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to a blank list."""
+        """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
     # Starts activity 'Activity' through --begin argument
@@ -69,7 +74,7 @@ class TestMainFinish(unittest.TestCase):
     """Tests for how trackerian's main() deals with the finish arg."""
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to a blank list."""
+        """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
     # Ends activity through --finish
@@ -90,7 +95,7 @@ class TestMainCurrent(unittest.TestCase):
     """Tests for how trackerian's main() deals with the current arg."""
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to a blank list."""
+        """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
     # Checks on current activity using --current and info is printed
@@ -128,6 +133,61 @@ class TestMainCurrent(unittest.TestCase):
         self.assertRaises(IndexError, trackerian.main())
 
 
+class TestMainSummary(unittest.TestCase):
+    """Tests for how trackerian's main() deals with the summary arg."""
+
+    def setUp(self):
+        """Create two instances of Activity class one of which has ended."""
+        trackerian.Activity('First Activity')
+        trackerian.Activity.instances[0].end_activity()
+        trackerian.Activity('Second Activity')
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to empty list."""
+        trackerian.Activity.instances = []
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_prints_number_of_tracked(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('summary', True)
+        trackerian.main()
+        self.assertIn('Activities Tracked: 2', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.Activity.return_current_duration')
+    @patch('trackerian.parse_arguments')
+    def test_prints_total_time_tracked(self, mocked_args, mocked_current_dur,
+                                       mocked_stdout):
+        mocked_args.return_value = edit_args_dict('summary', True)
+        mocked_current_dur.return_value = datetime.timedelta(0, 900)
+        first_duration = datetime.timedelta(0, 1800)
+        trackerian.Activity.instances[0].duration = first_duration
+        trackerian.main()
+        self.assertIn('0:45:00', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_prints_name_of_first_activity(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('summary', True)
+        trackerian.main()
+        self.assertIn('First Activity', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_prints_name_of_second_activity(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('summary', True)
+        trackerian.main()
+        self.assertIn('Second Activity', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_prints_duration_of_finished(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('summary', True)
+        trackerian.main()
+        target_duration = str(trackerian.Activity.instances[0].duration)
+        self.assertIn(target_duration, mocked_stdout.getvalue())
+
+
 class TestEndActivityActivityClassMethod(unittest.TestCase):
     """Tests for end_activity method of Activity class."""
 
@@ -138,7 +198,7 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         trackerian.Activity.instances[0].start = controlled_start_datetime
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to a blank list."""
+        """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
     @patch('trackerian.get_current_time')
@@ -148,6 +208,14 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         trackerian.Activity.instances[0].end_activity()
         end = trackerian.Activity.instances[0].end
         self.assertEqual(end, end_datetime_object)
+
+    @patch('trackerian.get_current_time')
+    def test_end_str_variable_set_correctly(self, mocked_time):
+        end_datetime_object = datetime.datetime(2010, 10, 10, 10, 30, 00)
+        mocked_time.return_value = end_datetime_object
+        trackerian.Activity.instances[0].end_activity()
+        end_str = trackerian.Activity.instances[0].end_str
+        self.assertEqual(end_str, '10:30:00')
 
     @patch('trackerian.get_current_time')
     def test_duration_set_to_correct_timedelta(self, mocked_time):
@@ -179,6 +247,10 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
 class TestReturnCurrentDurationActivityClassMethod(unittest.TestCase):
     """Tests for return_current_duration method of Activity class."""
 
+    def tearDown(self):
+        """."""
+        trackerian.Activity.instances = []
+
     @patch('trackerian.get_current_time')
     def test_returns_accurate_timedelta_object(self, mocked_time):
         mocked_time.side_effect = [
@@ -188,6 +260,16 @@ class TestReturnCurrentDurationActivityClassMethod(unittest.TestCase):
         trackerian.Activity('Check Duration')
         duration = trackerian.Activity.instances[-1].return_current_duration()
         self.assertEqual(duration, datetime.timedelta(0, 1800))
+
+
+class TestStrFormatDatetime(unittest.TestCase):
+    """Tests for str_format_datetime function."""
+
+    def test_returns_str(self):
+        test_date = datetime.datetime(2014, 4, 4, 4, 40, 00)
+        self.assertTrue(
+            isinstance(trackerian.str_format_datetime(test_date), str)
+        )
 
 
 def edit_args_dict(key, new_value):
@@ -205,6 +287,7 @@ def edit_args_dict(key, new_value):
         'begin': None,
         'finish': False,
         'current': False,
+        'summary': False,
     }
     defaulted_args_dict[key] = new_value
     return defaulted_args_dict
