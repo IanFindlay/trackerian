@@ -4,9 +4,10 @@
 
 import datetime
 import io
+import pickle
 import unittest
 import unittest.mock
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 import trackerian
 
@@ -184,8 +185,10 @@ class TestMainSummary(unittest.TestCase):
     def test_prints_duration_of_finished(self, mocked_args, mocked_stdout):
         mocked_args.return_value = edit_args_dict('summary', True)
         trackerian.main()
-        target_duration = str(trackerian.Activity.instances[0].duration)
-        self.assertIn(target_duration, mocked_stdout.getvalue())
+        self.assertIn(
+            str(trackerian.Activity.instances[0].duration).split('.')[0],
+            mocked_stdout.getvalue()
+        )
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
@@ -248,7 +251,7 @@ class TestReturnCurrentDurationActivityClassMethod(unittest.TestCase):
     """Tests for return_current_duration method of Activity class."""
 
     def tearDown(self):
-        """."""
+        """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
     @patch('trackerian.get_current_time')

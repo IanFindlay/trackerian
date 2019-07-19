@@ -4,6 +4,7 @@
 
 import argparse
 import datetime
+import pickle
 import sys
 
 
@@ -67,25 +68,31 @@ class Activity:
         Activity.instances.append(self)
 
     def __str__(self):
+        name_just = self.name.ljust(15)
         if not self.end:
-            return '({} - ~) {} Tracking | Current Duration {}'.format(
-                self.start_str, self.name,
-                str(self.return_current_duration())
+            return '({} - Tracking)  {} Duration: {}'.format(
+                self.start_str, name_just,
+                str(self.return_current_duration()).split('.')[0]
             )
 
-        return '({} - {}) {} Finished | Duration: {}'.format(
-            self.start_str, self.end_str, self.name, str(self.duration)
+        return '({} - {})  {} Duration: {}'.format(
+            self.start_str, self.end_str, name_just,
+            str(self.duration).split('.')[0]
         )
 
     def end_activity(self):
         """Set end and duration then print end confirmation."""
+        print()
         if not self.end:
             self.end = get_current_time()
             self.end_str = str_format_datetime(self.end)
             self.duration = self.end - self.start
-            print('{} finished. Duration: {}'.format(self.name, self.duration))
+            print('Tracking of {} Finished \t Duration: {}'.format(
+                self.name, str(self.duration).split('.')[0]
+            ))
         else:
             print('Tracking of {} is already finished.'.format(self.name))
+        print()
 
     def return_current_duration(self):
         """Calculate and return timedelta of activity time tracked so far."""
@@ -109,6 +116,22 @@ def str_format_datetime(datetime_object):
 
     """
     return datetime_object.strftime('%H:%M:%S')
+
+
+def pickle_activities():
+    """Write pickled Activity.instances to file."""
+    with open('data.pickle', 'wb') as pickled_file:
+        pickle.dump(Activity.instances, pickled_file)
+
+
+def unpickle_activities():
+    """Unpickle and return Activity instances from file.
+
+    Returns:
+        List of Activity instances.
+    """
+    with open('data.pickle', 'rb') as pickled_file:
+        return pickle.load(pickled_file)
 
 
 def main():
@@ -136,7 +159,7 @@ def main():
             else:
                 print(Activity.instances[-1])
         except IndexError:
-            print("No activities have been tracked.")
+            print("No activities are currently being tracked.")
 
     if args['summary']:
         total_time = datetime.timedelta(0)
@@ -145,12 +168,22 @@ def main():
                 total_time += activity.duration
             else:
                 total_time += activity.return_current_duration()
-
-        print('Activities Tracked: {} | Total Time Tracked {}'.format(
-            len(Activity.instances), total_time))
+        formatted_time = str(total_time).split('.')[0]
+        print()
+        print('Activities Tracked: {} | Total Time Tracked: {}'.format(
+            len(Activity.instances), formatted_time), end='\n\n')
         for activity in Activity.instances:
             print(activity)
+        print()
 
 
 if __name__ == '__main__':
+    # Load data from data.pickle or create it if missing
+    try:
+        Activity.instances = unpickle_activities()
+    except FileNotFoundError:
+        with open('data.pickle', 'w') as file_creator:
+            pass
+
     main()
+    pickle_activities()
