@@ -3,6 +3,7 @@
 """Trackerian - a command line time tracker."""
 
 import argparse
+import collections
 import datetime
 import pickle
 import sys
@@ -22,11 +23,11 @@ def parse_arguments(args):
     """
     parser = argparse.ArgumentParser(description="Command Line Time Tracker")
     parser.add_argument('-b', '--begin', metavar='activity',
-                        help='begin timing a task')
+                        help='begin timing an activity')
     parser.add_argument('-c', '--current', action='store_true',
-                        help='print current status of activity tracking')
+                        help='print status of current activity')
     parser.add_argument('-f', '--finish', action='store_true',
-                        help='finish timing a task')
+                        help='finish timing an activity')
     parser.add_argument('-l', '--list', action='store_true',
                         help='list tasks')
     parser.add_argument('-s', '--summary', action='store_true',
@@ -70,16 +71,15 @@ class Activity:
         Activity.instances.append(self)
 
     def __str__(self):
-        name_just = self.name.ljust(15)
         if not self.end:
-            return '({} - Tracking)  {} Duration: {}'.format(
-                self.start_str, name_just,
-                str(self.return_current_duration()).split('.')[0]
+            return '({} - Tracking)  {:<15} Duration: {}'.format(
+                self.start_str, self.name,
+                str_format_timedelta(self.return_current_duration())
             )
 
-        return '({} - {})  {} Duration: {}'.format(
-            self.start_str, self.end_str, name_just,
-            str(self.duration).split('.')[0]
+        return '({} - {})  {:<15} Duration: {}'.format(
+            self.start_str, self.end_str, self.name,
+            str_format_timedelta(self.duration)
         )
 
     def end_activity(self):
@@ -90,7 +90,7 @@ class Activity:
             self.end_str = str_format_datetime(self.end)
             self.duration = self.end - self.start
             print('Tracking of {} Finished \t Duration: {}'.format(
-                self.name, str(self.duration).split('.')[0]
+                self.name, str_format_timedelta(self.duration)
             ))
         else:
             print('Tracking of {} is already finished.'.format(self.name))
@@ -108,16 +108,31 @@ def get_current_time():
 
 
 def str_format_datetime(datetime_object):
-    """Format datetime object into string.
+    """Return formatted datetime object string.
 
     Args:
         datetime_object (datetime): Datetime time object.
 
     Returns:
-        String of datetime object formatted HH:MM:SS.
+        Str of datetime object formatted HH:MM:SS.
 
     """
     return datetime_object.strftime('%H:%M:%S')
+
+
+def str_format_timedelta(timedelta_object):
+    """Return formatted and trimmed timedelta object.
+
+    Args:
+        timedelta_object (timedelta): Datetime.timedelta object.
+
+    Returns:
+        Str of timedelta object formatted HH:MM:SS.
+    """
+    trimmed = str(timedelta_object).split('.')[0]
+    if len(trimmed) == 7:
+        return '0{}'.format(trimmed)
+    return trimmed
 
 
 def pickle_activities():
@@ -137,17 +152,27 @@ def unpickle_activities():
 
 
 def print_summary():
-    """Print summary of tracked activities."""
-    total_time = datetime.timedelta(0)
+    """Print summary of tracked activities (Total and Grouped)."""
+    activity_durations = collections.defaultdict(datetime.timedelta)
     for activity in Activity.instances:
         if activity.duration:
-            total_time += activity.duration
+            duration_to_add = activity.duration
         else:
-            total_time += activity.return_current_duration()
-    formatted_time = str(total_time).split('.')[0]
+            duration_to_add = activity.return_current_duration()
+
+        activity_durations['total'] += duration_to_add
+        activity_durations[activity.name] += duration_to_add
+
+    formatted_time = str_format_timedelta(activity_durations['total'])
     print('Activities Tracked: {} | Total Time Tracked: {}'.format(
         len(Activity.instances), formatted_time
     ))
+    print()
+
+    del activity_durations['total']
+    sort = sorted(activity_durations.items(), key=lambda x: x[1], reverse=True)
+    for activity, duration in sort:
+        print("{:<15}: {}".format(activity, str_format_timedelta(duration)))
 
 
 def main():
@@ -181,7 +206,7 @@ def main():
 
     elif args['list']:
         for num, activity in enumerate(Activity.instances):
-            print("{}| {}".format(str(num).ljust(2), activity))
+            print("{:<2}| {}".format(num, activity))
 
     elif args['summary']:
         print_summary()

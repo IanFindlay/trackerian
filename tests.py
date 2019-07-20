@@ -2,11 +2,12 @@
 
 """ User Story Unit Testing for  Trackerian - a commandline time tracker."""
 
+import collections
 import datetime
 import io
 import unittest
 import unittest.mock
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import trackerian
 
@@ -172,13 +173,14 @@ class TestMainList(unittest.TestCase):
 
 
 class TestPrintSummary(unittest.TestCase):
-    """Tests for how main() deals with the summary arg."""
+    """Tests for print_summary function."""
 
     def setUp(self):
-        """Create two instances of Activity class one of which has ended."""
-        trackerian.Activity('30 Minutes')
+        """Create two instances of Activity class one ended after 30 mins."""
+        trackerian.Activity('30Minutes')
         trackerian.Activity.instances[0].end_activity()
-        trackerian.Activity('15 Minutes')
+        trackerian.Activity.instances[0].duration = datetime.timedelta(0, 1800)
+        trackerian.Activity('15Minutes')
 
     def tearDown(self):
         """Restore trackerian's Activity instances to empty list."""
@@ -193,10 +195,23 @@ class TestPrintSummary(unittest.TestCase):
     @patch('trackerian.Activity.return_current_duration')
     def test_prints_total_time_tracked(self, mocked_duration, mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(0, 900)
-        first_duration = datetime.timedelta(0, 1800)
-        trackerian.Activity.instances[0].duration = first_duration
         trackerian.print_summary()
         self.assertIn('0:45:00', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_activities_grouped_by_name(self, mocked_stdout):
+        trackerian.Activity('30Minutes')
+        trackerian.print_summary()
+        word_count = collections.Counter(mocked_stdout.getvalue().split())
+        self.assertTrue(word_count['30Minutes'] == 1)
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.Activity.return_current_duration')
+    def test_grouped_activities_duration(self, mocked_duration, mocked_stdout):
+        mocked_duration.return_value = datetime.timedelta(0, 300)
+        trackerian.Activity('30Minutes')
+        trackerian.print_summary()
+        self.assertIn('0:35:00', mocked_stdout.getvalue())
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
@@ -280,6 +295,28 @@ class TestStrFormatDatetime(unittest.TestCase):
         test_date = datetime.datetime(2014, 4, 4, 4, 40, 00)
         self.assertTrue(
             isinstance(trackerian.str_format_datetime(test_date), str)
+        )
+
+
+class TestStrFormatTimedelta(unittest.TestCase):
+    """Test for str_format_timedelta function."""
+
+    def test_return_str(self):
+        test_delta = datetime.timedelta(0, 300)
+        self.assertTrue(
+            isinstance(trackerian.str_format_timedelta(test_delta), str)
+        )
+
+    def test_zero_pads_hour(self):
+        test_delta = datetime.timedelta(0, 300)
+        self.assertEqual(
+            trackerian.str_format_timedelta(test_delta), '00:05:00'
+        )
+
+    def test_return_has_milliseconds_trimmed(self):
+        test_delta = datetime.timedelta(0, 600, 250)
+        self.assertEqual(
+            trackerian.str_format_timedelta(test_delta), '00:10:00'
         )
 
 
