@@ -23,10 +23,12 @@ def parse_arguments(args):
     parser = argparse.ArgumentParser(description="Command Line Time Tracker")
     parser.add_argument('-b', '--begin', metavar='activity',
                         help='begin timing a task')
-    parser.add_argument('-f', '--finish', action='store_true',
-                        help='finish timing a task')
     parser.add_argument('-c', '--current', action='store_true',
                         help='print current status of activity tracking')
+    parser.add_argument('-f', '--finish', action='store_true',
+                        help='finish timing a task')
+    parser.add_argument('-l', '--list', action='store_true',
+                        help='list tasks')
     parser.add_argument('-s', '--summary', action='store_true',
                         help='print summary of tracked activities')
 
@@ -134,11 +136,27 @@ def unpickle_activities():
         return pickle.load(pickled_file)
 
 
+def print_summary():
+    """Print summary of tracked activities."""
+    total_time = datetime.timedelta(0)
+    for activity in Activity.instances:
+        if activity.duration:
+            total_time += activity.duration
+        else:
+            total_time += activity.return_current_duration()
+    formatted_time = str(total_time).split('.')[0]
+    print('Activities Tracked: {} | Total Time Tracked: {}'.format(
+        len(Activity.instances), formatted_time
+    ))
+
+
 def main():
     """Coordinate creation and time tracking of activities."""
     args = parse_arguments(sys.argv[1:])
     if not args:
         sys.exit()
+
+    print()
 
     if args['begin']:
         if Activity.instances and not Activity.instances[-1].end:
@@ -146,13 +164,7 @@ def main():
         Activity(args['begin'])
         print(Activity.instances[-1])
 
-    if args['finish']:
-        try:
-            Activity.instances[-1].end_activity()
-        except IndexError:
-            print("No activities have been tracked.")
-
-    if args['current']:
+    elif args['current']:
         try:
             if Activity.instances[-1].end:
                 print("Currently Not Tracking an Activity")
@@ -161,20 +173,20 @@ def main():
         except IndexError:
             print("No activities are currently being tracked.")
 
-    if args['summary']:
-        total_time = datetime.timedelta(0)
-        for activity in Activity.instances:
-            if activity.duration:
-                total_time += activity.duration
-            else:
-                total_time += activity.return_current_duration()
-        formatted_time = str(total_time).split('.')[0]
-        print()
-        print('Activities Tracked: {} | Total Time Tracked: {}'.format(
-            len(Activity.instances), formatted_time), end='\n\n')
-        for activity in Activity.instances:
-            print(activity)
-        print()
+    elif args['finish']:
+        try:
+            Activity.instances[-1].end_activity()
+        except IndexError:
+            print("No activities have been tracked.")
+
+    elif args['list']:
+        for num, activity in enumerate(Activity.instances):
+            print("{}| {}".format(str(num).ljust(2), activity))
+
+    elif args['summary']:
+        print_summary()
+
+    print()
 
 
 if __name__ == '__main__':

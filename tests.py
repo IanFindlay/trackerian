@@ -4,7 +4,6 @@
 
 import datetime
 import io
-import pickle
 import unittest
 import unittest.mock
 from unittest.mock import mock_open, patch
@@ -43,7 +42,7 @@ class TestParseArguments(unittest.TestCase):
 
 
 class TestMainBegin(unittest.TestCase):
-    """Tests for how trackerian's main() deals with the begin arg."""
+    """Tests for how main() deals with the begin arg."""
 
     def tearDown(self):
         """Restore trackerian's Activity instances to a empty list."""
@@ -72,7 +71,7 @@ class TestMainBegin(unittest.TestCase):
 
 
 class TestMainFinish(unittest.TestCase):
-    """Tests for how trackerian's main() deals with the finish arg."""
+    """Tests for how main() deals with the finish arg."""
 
     def tearDown(self):
         """Restore trackerian's Activity instances to a empty list."""
@@ -93,7 +92,7 @@ class TestMainFinish(unittest.TestCase):
 
 
 class TestMainCurrent(unittest.TestCase):
-    """Tests for how trackerian's main() deals with the current arg."""
+    """Tests for how main() deals with the current arg."""
 
     def tearDown(self):
         """Restore trackerian's Activity instances to a empty list."""
@@ -134,8 +133,8 @@ class TestMainCurrent(unittest.TestCase):
         self.assertRaises(IndexError, trackerian.main())
 
 
-class TestMainSummary(unittest.TestCase):
-    """Tests for how trackerian's main() deals with the summary arg."""
+class TestMainList(unittest.TestCase):
+    """Tests for how main() deals with the list arg."""
 
     def setUp(self):
         """Create two instances of Activity class one of which has ended."""
@@ -149,46 +148,55 @@ class TestMainSummary(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_prints_number_of_tracked(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('summary', True)
-        trackerian.main()
-        self.assertIn('Activities Tracked: 2', mocked_stdout.getvalue())
-
-    @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('trackerian.Activity.return_current_duration')
-    @patch('trackerian.parse_arguments')
-    def test_prints_total_time_tracked(self, mocked_args, mocked_current_dur,
-                                       mocked_stdout):
-        mocked_args.return_value = edit_args_dict('summary', True)
-        mocked_current_dur.return_value = datetime.timedelta(0, 900)
-        first_duration = datetime.timedelta(0, 1800)
-        trackerian.Activity.instances[0].duration = first_duration
-        trackerian.main()
-        self.assertIn('0:45:00', mocked_stdout.getvalue())
-
-    @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('trackerian.parse_arguments')
     def test_prints_name_of_first_activity(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('summary', True)
+        mocked_args.return_value = edit_args_dict('list', True)
         trackerian.main()
         self.assertIn('First Activity', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
     def test_prints_name_of_second_activity(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('summary', True)
+        mocked_args.return_value = edit_args_dict('list', True)
         trackerian.main()
         self.assertIn('Second Activity', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
     def test_prints_duration_of_finished(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('summary', True)
+        mocked_args.return_value = edit_args_dict('list', True)
         trackerian.main()
         self.assertIn(
             str(trackerian.Activity.instances[0].duration).split('.')[0],
             mocked_stdout.getvalue()
         )
+
+
+class TestPrintSummary(unittest.TestCase):
+    """Tests for how main() deals with the summary arg."""
+
+    def setUp(self):
+        """Create two instances of Activity class one of which has ended."""
+        trackerian.Activity('30 Minutes')
+        trackerian.Activity.instances[0].end_activity()
+        trackerian.Activity('15 Minutes')
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to empty list."""
+        trackerian.Activity.instances = []
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_prints_number_of_tracked(self, mocked_stdout):
+        trackerian.print_summary()
+        self.assertIn('Activities Tracked: 2', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.Activity.return_current_duration')
+    def test_prints_total_time_tracked(self, mocked_duration, mocked_stdout):
+        mocked_duration.return_value = datetime.timedelta(0, 900)
+        first_duration = datetime.timedelta(0, 1800)
+        trackerian.Activity.instances[0].duration = first_duration
+        trackerian.print_summary()
+        self.assertIn('0:45:00', mocked_stdout.getvalue())
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
@@ -291,6 +299,7 @@ def edit_args_dict(key, new_value):
         'finish': False,
         'current': False,
         'summary': False,
+        'list': False,
     }
     defaulted_args_dict[key] = new_value
     return defaulted_args_dict
