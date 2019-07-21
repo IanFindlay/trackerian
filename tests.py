@@ -41,6 +41,16 @@ class TestParseArguments(unittest.TestCase):
         args = trackerian.parse_arguments(['--summary'])
         self.assertEqual(args['summary'], True)
 
+    # User passes --list to see list of tracked activities
+    def test_list_argument_stores_true_boolean_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--list'])
+        self.assertEqual(args['list'], True)
+
+    # User passes --tag to add tag to current activity
+    def test_tag_argument_stores_tag_string_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--tag', 'Testing Tag'])
+        self.assertEqual(args['tag'], 'Testing Tag')
+
 
 class TestMainBegin(unittest.TestCase):
     """Tests for how main() deals with the begin arg."""
@@ -172,15 +182,75 @@ class TestMainList(unittest.TestCase):
         )
 
 
+class TestMainTag(unittest.TestCase):
+    """Tests for how main() deals with the tag arg."""
+
+    def setUp(self):
+        """Instantiate an Activity."""
+        trackerian.Activity('Running')
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to empty list."""
+        trackerian.Activity.instances = []
+
+    @patch('trackerian.parse_arguments')
+    def test_adds_tag_to_running_activity(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('tag', 'tagged')
+        trackerian.main()
+        self.assertEqual(
+            trackerian.Activity.instances[0].tags, ['tagged']
+        )
+
+    @patch('trackerian.parse_arguments')
+    def test_adds_multiple_tags_to_running_activity(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('tag', 'tagged twice')
+        trackerian.main()
+        self.assertEqual(
+            trackerian.Activity.instances[0].tags, ['tagged', 'twice']
+        )
+
+    @patch('trackerian.parse_arguments')
+    def test_adds_tag_to_latest_finished_activity(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('tag', 'tagged')
+        trackerian.Activity.instances[0].end = 'Ended'
+        trackerian.main()
+        self.assertEqual(
+            trackerian.Activity.instances[0].tags, ['tagged']
+        )
+
+    @patch('trackerian.parse_arguments')
+    def test_adds_multiple_tags_to_latest_finished_activity(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('tag', 'tagged twice')
+        trackerian.Activity.instances[0].end = 'Ended'
+        trackerian.main()
+        self.assertEqual(
+            trackerian.Activity.instances[0].tags, ['tagged', 'twice']
+        )
+
+
 class TestPrintSummary(unittest.TestCase):
     """Tests for print_summary function."""
 
     def setUp(self):
-        """Create two instances of Activity class one ended after 30 mins."""
+        """Create three instances of Activity class.
+
+        First has two tags and a duration of 30 minutes.
+        Second has same name and duration as first but only one tag in common.
+        Third is ongoing and shares a tag with the first but not the second.
+
+        """
         trackerian.Activity('30Minutes')
+        trackerian.Activity.instances[0].tags = ['TagOne', 'TagTwo']
         trackerian.Activity.instances[0].end_activity()
         trackerian.Activity.instances[0].duration = datetime.timedelta(0, 1800)
-        trackerian.Activity('15Minutes')
+
+        trackerian.Activity('30Minutes')
+        trackerian.Activity.instances[1].tags = ['TagOne']
+        trackerian.Activity.instances[1].end_activity()
+        trackerian.Activity.instances[1].duration = datetime.timedelta(0, 1800)
+
+        trackerian.Activity('Variable')
+        trackerian.Activity.instances[-1].tags = ['TagOne', 'TagTwo']
 
     def tearDown(self):
         """Restore trackerian's Activity instances to empty list."""
@@ -189,14 +259,14 @@ class TestPrintSummary(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_prints_number_of_tracked(self, mocked_stdout):
         trackerian.print_summary()
-        self.assertIn('Activities Tracked: 2', mocked_stdout.getvalue())
+        self.assertIn('Activities Tracked: 3', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
-    def test_prints_total_time_tracked(self, mocked_duration, mocked_stdout):
+    def test_prints_total_time(self, mocked_duration, mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(0, 900)
         trackerian.print_summary()
-        self.assertIn('0:45:00', mocked_stdout.getvalue())
+        self.assertIn('01:15:00', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_activities_grouped_by_name(self, mocked_stdout):
@@ -207,11 +277,25 @@ class TestPrintSummary(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
-    def test_grouped_activities_duration(self, mocked_duration, mocked_stdout):
-        mocked_duration.return_value = datetime.timedelta(0, 300)
-        trackerian.Activity('30Minutes')
+    def test_name_grouped_duration_shown(self, mocked_duration, mocked_stdout):
+        mocked_duration.return_value = datetime.timedelta(0, 60)
         trackerian.print_summary()
-        self.assertIn('0:35:00', mocked_stdout.getvalue())
+        # Activity 3 given 1 min current duration so total isn't same as name
+        self.assertIn('01:00:00', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_tags_printed(self, mocked_stdout):
+        trackerian.print_summary()
+        self.assertIn('TagOne', mocked_stdout.getvalue())
+        self.assertIn('TagTwo', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.Activity.return_current_duration')
+    def test_tag_duration(self, mocked_duration, mocked_stdout):
+        mocked_duration.return_value = datetime.timedelta(0, 600)
+        trackerian.print_summary()
+        # Activity 3 given 10 minutes current duration so tag one = 01:10:00
+        self.assertIn('01:10:00', mocked_stdout.getvalue())
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
@@ -337,6 +421,7 @@ def edit_args_dict(key, new_value):
         'current': False,
         'summary': False,
         'list': False,
+        'tag': None,
     }
     defaulted_args_dict[key] = new_value
     return defaulted_args_dict
