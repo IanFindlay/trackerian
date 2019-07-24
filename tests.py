@@ -279,15 +279,16 @@ class TestPrintSummary(unittest.TestCase):
         Third is ongoing and shares a tag with the first but not the second.
 
         """
+        half_hour = datetime.timedelta(minutes=30)
         trackerian.Activity('30Minutes')
         trackerian.Activity.instances[0].tags = ['TagOne', 'TagTwo']
         trackerian.Activity.instances[0].end_activity()
-        trackerian.Activity.instances[0].duration = datetime.timedelta(0, 1800)
+        trackerian.Activity.instances[0].duration = half_hour
 
         trackerian.Activity('30Minutes')
         trackerian.Activity.instances[1].tags = ['TagOne']
         trackerian.Activity.instances[1].end_activity()
-        trackerian.Activity.instances[1].duration = datetime.timedelta(0, 1800)
+        trackerian.Activity.instances[1].duration = half_hour
 
         trackerian.Activity('Variable')
         trackerian.Activity.instances[-1].tags = ['TagOne', 'TagTwo']
@@ -304,7 +305,7 @@ class TestPrintSummary(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
     def test_prints_total_time(self, mocked_duration, mocked_stdout):
-        mocked_duration.return_value = datetime.timedelta(0, 900)
+        mocked_duration.return_value = datetime.timedelta(minutes=15)
         trackerian.print_summary()
         self.assertIn('01:15:00', mocked_stdout.getvalue())
 
@@ -325,10 +326,19 @@ class TestPrintSummary(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
     def test_name_grouped_duration_shown(self, mocked_duration, mocked_stdout):
-        mocked_duration.return_value = datetime.timedelta(0, 60)
+        mocked_duration.return_value = datetime.timedelta(minutes=60)
         trackerian.print_summary()
         # Activity 3 given 1 min current duration so total isn't same as name
         self.assertIn('01:00:00', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.Activity.return_current_duration')
+    def test_name_grouped_percentage_printed(self, mocked_duration,
+                                             mocked_stdout):
+        mocked_duration.return_value = datetime.timedelta(minutes=15)
+        trackerian.print_summary()
+        # Activity 3 given 15 min current duration (20%)
+        self.assertIn('20.00%', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_tags_printed(self, mocked_stdout):
@@ -339,10 +349,19 @@ class TestPrintSummary(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
     def test_tag_grouped_duration(self, mocked_duration, mocked_stdout):
-        mocked_duration.return_value = datetime.timedelta(0, 600)
+        mocked_duration.return_value = datetime.timedelta(minutes=10)
         trackerian.print_summary()
         # Activity 3 given 10 minutes current duration so tag one = 01:10:00
         self.assertIn('01:10:00', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.Activity.return_current_duration')
+    def test_tag_grouped_percentage_printed(self, mocked_duration,
+                                            mocked_stdout):
+        mocked_duration.return_value = datetime.timedelta(hours=1)
+        trackerian.print_summary()
+        # Activity 3 given 1 hour so Tagtwo percentage will be (50.00%)
+        self.assertIn('50.00%', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_earlier_than_range_start_datetime_ignored(self, mocked_stdout):
@@ -455,6 +474,17 @@ class TestStrFormatTimedelta(unittest.TestCase):
         test_delta = datetime.timedelta(0, 600, 250)
         self.assertEqual(
             trackerian.str_format_timedelta(test_delta), '00:10:00'
+        )
+
+
+class TestPercentageOfTimedelta(unittest.TestCase):
+    """."""
+
+    def test_returns_correct_percentage(self):
+        total = datetime.timedelta(hours=1)
+        duration = datetime.timedelta(minutes=15)
+        self.assertEqual(
+            trackerian.percentage_of_timedelta(total, duration), '25.00%'
         )
 
 

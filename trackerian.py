@@ -84,12 +84,12 @@ class Activity:
 
     def __str__(self):
         if not self.end:
-            return '({} - Tracking)  {:<15} Duration: {}'.format(
+            return '({} - Tracking)  {:<20} Duration: {}'.format(
                 self.start_str, self.name,
                 str_format_timedelta(self.return_current_duration())
             )
 
-        return '({} - {})  {:<15} Duration: {}'.format(
+        return '({} - {})  {:<20} Duration: {}'.format(
             self.start_str, self.end_str, self.name,
             str_format_timedelta(self.duration)
         )
@@ -180,6 +180,8 @@ def print_summary(date_range_start=None):
     activity_durations = collections.defaultdict(datetime.timedelta)
     tag_durations = collections.defaultdict(datetime.timedelta)
 
+    total_time = datetime.timedelta()
+
     for activity in Activity.instances:
         if date_range_start and activity.start < date_range_start:
             continue
@@ -188,22 +190,23 @@ def print_summary(date_range_start=None):
         else:
             duration_to_add = activity.return_current_duration()
 
-        activity_durations['total'] += duration_to_add
+        total_time += duration_to_add
         activity_durations[activity.name] += duration_to_add
 
         for tag in activity.tags:
             tag_durations[tag] += duration_to_add
 
     print('Activities Tracked: {} | Total Time Tracked: {}'.format(
-        len(Activity.instances),
-        str_format_timedelta(activity_durations['total'])
+        len(Activity.instances), str_format_timedelta(total_time)
     ))
     print()
 
-    del activity_durations['total']
     sort = sorted(activity_durations.items(), key=lambda x: x[1], reverse=True)
     for activity, duration in sort:
-        print("{:<15}: {}".format(activity, str_format_timedelta(duration)))
+        print("{:<20} {:<15} {}".format(
+            activity, str_format_timedelta(duration),
+            percentage_of_timedelta(total_time, duration)
+        ))
 
     print('', end='\n\n')
 
@@ -211,7 +214,16 @@ def print_summary(date_range_start=None):
 
     sort = sorted(tag_durations.items(), key=lambda x: x[1], reverse=True)
     for tag, duration in sort:
-        print("{:<15}: {}".format(tag, str_format_timedelta(duration)))
+        print("{:<20} {:<15} {}".format(
+            tag, str_format_timedelta(duration),
+            percentage_of_timedelta(total_time, duration)
+        ))
+
+
+def percentage_of_timedelta(total, duration):
+    """Return percentage duration timedelta is of total timedelta."""
+    proportion = duration.total_seconds() / total.total_seconds()
+    return '{:.2%}'.format(proportion)
 
 
 def main():
@@ -232,7 +244,8 @@ def main():
 
     elif args['list']:
         for num, activity in enumerate(Activity.instances):
-            print("{:<2}| {}".format(num, activity))
+            print("{:<5} {}".format(num, activity))
+            print()
 
     elif args['summary']:
         if args['summary'] == 'day':
