@@ -72,7 +72,7 @@ class Activity:
             name (str): Name of the activity.
 
         """
-        self.name = name
+        self.name = name.title()
         self.tags = []
         self.start = get_current_time()
         self.start_str = str_format_datetime(self.start)
@@ -229,7 +229,9 @@ def main():
         return
 
     if args['tag']:
-        Activity.instances[-1].tags.extend(args['tag'].split())
+        Activity.instances[-1].tags.extend(
+            [tag.lower() for tag in args['tag'].split()]
+        )
 
     elif args['current']:
         if Activity.instances[-1].end:

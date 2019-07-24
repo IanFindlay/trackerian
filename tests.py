@@ -227,6 +227,14 @@ class TestMainTag(unittest.TestCase):
             trackerian.Activity.instances[0].tags, ['tagged', 'twice']
         )
 
+    @patch('trackerian.parse_arguments')
+    def test_tags_are_added_as_lowercase_to_instance(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('tag', 'Title UPPERCASE')
+        trackerian.main()
+        self.assertEqual(
+            trackerian.Activity.instances[0].tags, ['title', 'uppercase']
+        )
+
 
 class TestPrintSummary(unittest.TestCase):
     """Tests for print_summary function."""
@@ -276,6 +284,13 @@ class TestPrintSummary(unittest.TestCase):
         self.assertTrue(word_count['30Minutes'] == 1)
 
     @patch('sys.stdout', new_callable=io.StringIO)
+    def test_name_grouping_case_insensitive(self, mocked_stdout):
+        trackerian.Activity('30MINUTES')
+        trackerian.print_summary()
+        word_count = collections.Counter(mocked_stdout.getvalue().split())
+        self.assertTrue(word_count['30MINUTES'] == 0)
+
+    @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
     def test_name_grouped_duration_shown(self, mocked_duration, mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(0, 60)
@@ -291,7 +306,7 @@ class TestPrintSummary(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
-    def test_tag_duration(self, mocked_duration, mocked_stdout):
+    def test_tag_grouped_duration(self, mocked_duration, mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(0, 600)
         trackerian.print_summary()
         # Activity 3 given 10 minutes current duration so tag one = 01:10:00
