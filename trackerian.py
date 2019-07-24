@@ -38,7 +38,7 @@ def parse_arguments(args):
     parser.add_argument('-s', '--summary', nargs='?', choices=['all', 'day'],
                         const='day', help='Print summary of activities')
 
-    parser.add_argument('-t', '--tag', metavar='tag',
+    parser.add_argument('-t', '--tag', metavar='tag', nargs='*',
                         help='Add one word tag(s) to latest activity')
 
     if not args:
@@ -252,7 +252,7 @@ def main():
 
     if args['tag']:
         Activity.instances[-1].tags.extend(
-            [tag.lower() for tag in args['tag'].split()]
+            [tag.title() for tag in args['tag']]
         )
 
     elif args['current']:

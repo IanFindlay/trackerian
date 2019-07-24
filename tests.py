@@ -52,9 +52,9 @@ class TestParseArguments(unittest.TestCase):
         args = trackerian.parse_arguments(['--list'])
         self.assertEqual(args['list'], True)
 
-    def test_tag_stores_tag_string_in_returned_dict(self):
-        args = trackerian.parse_arguments(['--tag', 'Testing Tag'])
-        self.assertEqual(args['tag'], 'Testing Tag')
+    def test_tag_stores_tag_list_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--tag', 'Args', 'Listed'])
+        self.assertEqual(args['tag'], ['Args', 'Listed'])
 
 
 class TestMainBegin(unittest.TestCase):
@@ -200,44 +200,44 @@ class TestMainTag(unittest.TestCase):
 
     @patch('trackerian.parse_arguments')
     def test_adds_tag_to_running_activity(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('tag', 'tagged')
+        mocked_args.return_value = edit_args_dict('tag', ['tagged'])
         trackerian.main()
         self.assertEqual(
-            trackerian.Activity.instances[0].tags, ['tagged']
+            trackerian.Activity.instances[0].tags, ['Tagged']
         )
 
     @patch('trackerian.parse_arguments')
     def test_adds_multiple_tags_to_running_activity(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('tag', 'tagged twice')
+        mocked_args.return_value = edit_args_dict('tag', ['tagged', 'twice'])
         trackerian.main()
         self.assertEqual(
-            trackerian.Activity.instances[0].tags, ['tagged', 'twice']
+            trackerian.Activity.instances[0].tags, ['Tagged', 'Twice']
         )
 
     @patch('trackerian.parse_arguments')
     def test_adds_tag_to_latest_finished_activity(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('tag', 'tagged')
+        mocked_args.return_value = edit_args_dict('tag', ['tagged'])
         trackerian.Activity.instances[0].end = 'Ended'
         trackerian.main()
         self.assertEqual(
-            trackerian.Activity.instances[0].tags, ['tagged']
+            trackerian.Activity.instances[0].tags, ['Tagged']
         )
 
     @patch('trackerian.parse_arguments')
     def test_adds_multiple_tags_to_latest_finished_activity(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('tag', 'tagged twice')
+        mocked_args.return_value = edit_args_dict('tag', ['tagged', 'twice'])
         trackerian.Activity.instances[0].end = 'Ended'
         trackerian.main()
         self.assertEqual(
-            trackerian.Activity.instances[0].tags, ['tagged', 'twice']
+            trackerian.Activity.instances[0].tags, ['Tagged', 'Twice']
         )
 
     @patch('trackerian.parse_arguments')
-    def test_tags_are_added_as_lowercase_to_instance(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('tag', 'Title UPPERCASE')
+    def test_tags_are_added_as_title_case_to_instance(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('tag', ['Title', 'UPPER'])
         trackerian.main()
         self.assertEqual(
-            trackerian.Activity.instances[0].tags, ['title', 'uppercase']
+            trackerian.Activity.instances[0].tags, ['Title', 'Upper']
         )
 
 
