@@ -35,10 +35,10 @@ def parse_arguments(args):
     parser.add_argument('-l', '--list', action='store_true',
                         help='Print list of tracked activities')
 
-    parser.add_argument('-s', '--summary', action='store_true',
-                        help='Print summary of tracked activities')
+    parser.add_argument('-s', '--summary', nargs='?', choices=['all', 'day'],
+                        const='day', help='Print summary of activities')
 
-    parser.add_argument('-t', '--tag', metavar='tags(s)',
+    parser.add_argument('-t', '--tag', metavar='tag',
                         help='Add one word tag(s) to latest activity')
 
     if not args:
@@ -163,12 +163,26 @@ def unpickle_activities():
         return pickle.load(pickled_file)
 
 
-def print_summary():
-    """Print summary of tracked activities (total, by name and by tag)."""
+def print_summary(date_range_start=None):
+    """Print summary of tracked activities.
+
+    Activities and their total durations are grouped by name and,
+    in a separate display, by their tags (case-insensitive).
+    Only activities with datetimes after the range_start arg are used.
+
+    Args:
+        date_range_start (Datetime): Datetime object. Defaults to None.
+            Sets the early end of the date range. Activities whose
+            start datetimes are earlier than this will not be used in
+            calculations or displayed.
+
+    """
     activity_durations = collections.defaultdict(datetime.timedelta)
     tag_durations = collections.defaultdict(datetime.timedelta)
 
     for activity in Activity.instances:
+        if date_range_start and activity.start < date_range_start:
+            continue
         if activity.duration:
             duration_to_add = activity.duration
         else:
@@ -202,6 +216,8 @@ def print_summary():
 
 def main():
     """Coordinate creation and time tracking of activities."""
+    day_start_hour = 4
+    day_start_minute = 0
     args = parse_arguments(sys.argv[1:])
     if not args:
         return
@@ -219,7 +235,12 @@ def main():
             print("{:<2}| {}".format(num, activity))
 
     elif args['summary']:
-        print_summary()
+        if args['summary'] == 'day':
+            today = datetime.datetime.now()
+            today.replace(hour=day_start_hour, minute=day_start_minute)
+            print_summary(today)
+        else:
+            print_summary()
 
     # Args below IndexError if there are no Activity instances so catch here
     try:

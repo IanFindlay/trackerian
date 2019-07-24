@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" User Story Unit Testing for  Trackerian - a commandline time tracker."""
+""" Unit Tests for  Trackerian - a command line time tracker."""
 
 import collections
 import datetime
@@ -15,39 +15,44 @@ import trackerian
 class TestParseArguments(unittest.TestCase):
     """Tests for trackerians parse_arguments() function."""
 
-    # User runs trackerian.py from command line and receives help instructions
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_no_arguments_prints_help(self, mocked_stdout):
         trackerian.parse_arguments([])
         self.assertIn("usage:", mocked_stdout.getvalue())
 
-    # From help finds that --begin TASKNAME is how to start timing a task
-    def test_begin_argument_stores_activity_name_in_returned_dict(self):
+    def test_begin_stores_activity_name_in_returned_dict(self):
         args = trackerian.parse_arguments(['--begin', 'Activity Name'])
         self.assertEqual(args['begin'], 'Activity Name')
 
-    # After some time finishes the task with the --finish argument
-    def test_finish_argument_stores_true_boolean_in_returned_dict(self):
+    def test_finish_stores_true_boolean_in_returned_dict(self):
         args = trackerian.parse_arguments(['--finish'])
         self.assertEqual(args['finish'], True)
 
-    # User passes --current argument to check if an activity is being tracked
-    def test_current_argument_stores_true_boolean_in_returned_dict(self):
+    def test_current_stores_true_boolean_in_returned_dict(self):
         args = trackerian.parse_arguments(['--current'])
         self.assertEqual(args['current'], True)
 
-    # User passes --summary to see information about past/current activities
-    def test_summary_argument_stores_true_boolean_in_returned_dict(self):
+    def test_summary_defaults_to_day(self):
         args = trackerian.parse_arguments(['--summary'])
-        self.assertEqual(args['summary'], True)
+        self.assertEqual(args['summary'], 'day')
 
-    # User passes --list to see list of tracked activities
-    def test_list_argument_stores_true_boolean_in_returned_dict(self):
+    def test_summary_stores_valid_choice_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--summary', 'all'])
+        self.assertEqual(args['summary'], 'all')
+
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_summary_invalid_choice_in_error(self, mocked_stderr):
+        try:
+            trackerian.parse_arguments(['--summary', 'invalid'])
+        except:
+            pass
+        self.assertIn('invalid choice:', mocked_stderr.getvalue())
+
+    def test_list_stores_true_boolean_in_returned_dict(self):
         args = trackerian.parse_arguments(['--list'])
         self.assertEqual(args['list'], True)
 
-    # User passes --tag to add tag to current activity
-    def test_tag_argument_stores_tag_string_in_returned_dict(self):
+    def test_tag_stores_tag_string_in_returned_dict(self):
         args = trackerian.parse_arguments(['--tag', 'Testing Tag'])
         self.assertEqual(args['tag'], 'Testing Tag')
 
@@ -236,6 +241,28 @@ class TestMainTag(unittest.TestCase):
         )
 
 
+class TestMainSummary(unittest.TestCase):
+    """Tests for how main() deals with summary args."""
+
+    @patch('trackerian.print_summary')
+    @patch('trackerian.parse_arguments')
+    def test_day_passes_today_datetime_to_print_summary(self, mocked_args,
+                                                        mocked_summary):
+        mocked_args.return_value = edit_args_dict('summary', 'day')
+        trackerian.main()
+        passed_datetime = mocked_summary.call_args[0][0]
+        datetime_difference = passed_datetime - datetime.datetime.now()
+        self.assertTrue(datetime_difference <= datetime.timedelta(hours=24))
+
+    @patch('trackerian.print_summary')
+    @patch('trackerian.parse_arguments')
+    def test_no_arg_passed_to_print_summary_with_all_arg(self, mocked_args,
+                                                         mocked_summary):
+        mocked_args.return_value = edit_args_dict('summary', 'all')
+        trackerian.main()
+        self.assertEqual(mocked_summary.call_args[0], ())
+
+
 class TestPrintSummary(unittest.TestCase):
     """Tests for print_summary function."""
 
@@ -311,6 +338,13 @@ class TestPrintSummary(unittest.TestCase):
         trackerian.print_summary()
         # Activity 3 given 10 minutes current duration so tag one = 01:10:00
         self.assertIn('01:10:00', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_earlier_than_range_start_datetime_ignored(self, mocked_stdout):
+        date_range_start = datetime.datetime.now()
+        trackerian.Activity('Alone')
+        trackerian.print_summary(date_range_start)
+        self.assertNotIn('30Minutes', mocked_stdout.getvalue())
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
