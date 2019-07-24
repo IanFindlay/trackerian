@@ -237,8 +237,9 @@ def main():
     elif args['summary']:
         if args['summary'] == 'day':
             today = datetime.datetime.now()
-            today.replace(hour=day_start_hour, minute=day_start_minute)
-            print_summary(today)
+            day_start = today.replace(hour=day_start_hour,
+                                      minute=day_start_minute)
+            print_summary(day_start)
         else:
             print_summary()
 
