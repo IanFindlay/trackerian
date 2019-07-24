@@ -20,9 +20,9 @@ class TestParseArguments(unittest.TestCase):
         trackerian.parse_arguments([])
         self.assertIn("usage:", mocked_stdout.getvalue())
 
-    def test_begin_stores_activity_name_in_returned_dict(self):
-        args = trackerian.parse_arguments(['--begin', 'Activity Name'])
-        self.assertEqual(args['begin'], 'Activity Name')
+    def test_begin_stores_activity_name_words_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--begin', 'Activity', 'Name'])
+        self.assertEqual(args['begin'], ['Activity', 'Name'])
 
     def test_finish_stores_true_boolean_in_returned_dict(self):
         args = trackerian.parse_arguments(['--finish'])
@@ -64,24 +64,29 @@ class TestMainBegin(unittest.TestCase):
         """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
-    # Starts activity 'Activity' through --begin argument
     @patch('trackerian.parse_arguments')
-    def test_begin_instantiates_activity_with_arg_name(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('begin', 'Activity')
+    def test_instantiates_activity_with_arg_name(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('begin', ['Activity'])
         trackerian.main()
         self.assertEqual(trackerian.Activity.instances[0].name, 'Activity')
 
+    @patch('trackerian.parse_arguments')
+    def test_instantiates_activity_with_joined_arg_name(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('begin', ['Split', 'Name'])
+        trackerian.main()
+        self.assertEqual(trackerian.Activity.instances[0].name, 'Split Name')
+
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_begin_prints__about_task_start(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('begin', 'Activity Printed')
+    def test_prints_about_task_start(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('begin', ['Print', 'Test'])
         trackerian.main()
-        self.assertIn('Activity Printed', mocked_stdout.getvalue())
+        self.assertIn('Print Test', mocked_stdout.getvalue())
 
     @patch('trackerian.parse_arguments')
-    def test_begin_ends_previous_process_if_not_ended(self, mocked_args):
+    def test_ends_previous_process_if_not_ended(self, mocked_args):
         trackerian.Activity('Begin Should End This')
-        mocked_args.return_value = edit_args_dict('begin', 'New Actvity')
+        mocked_args.return_value = edit_args_dict('begin', ['New', 'Actvity'])
         trackerian.main()
         self.assertTrue(trackerian.Activity.instances[0].end)
 

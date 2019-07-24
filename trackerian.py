@@ -23,7 +23,7 @@ def parse_arguments(args):
     """
     parser = argparse.ArgumentParser(description="Command Line Time Tracker")
 
-    parser.add_argument('-b', '--begin', metavar='activity',
+    parser.add_argument('-b', '--begin', metavar='activity', nargs='*',
                         help='Begin timing an activity with argument name')
 
     parser.add_argument('-c', '--current', action='store_true',
@@ -167,8 +167,8 @@ def print_summary(date_range_start=None):
     """Print summary of tracked activities.
 
     Activities and their total durations are grouped by name and,
-    in a separate display, by their tags (case-insensitive).
-    Only activities with datetimes after the range_start arg are used.
+    in a separate display, by their tags.
+    Only activities with datetimes later than date_range_start arg are used.
 
     Args:
         date_range_start (Datetime): Datetime object. Defaults to None.
@@ -227,7 +227,7 @@ def main():
     if args['begin']:
         if Activity.instances and not Activity.instances[-1].end:
             Activity.instances[-1].end_activity()
-        Activity(args['begin'])
+        Activity(' '.join(args['begin']))
         print(Activity.instances[-1])
 
     elif args['list']:
