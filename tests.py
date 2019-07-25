@@ -288,6 +288,22 @@ class TestMainEdit(unittest.TestCase):
         trackerian.main()
         self.assertEqual(trackerian.Activity.instances[1].tags, args[2:])
 
+    @patch('trackerian.parse_arguments')
+    def test_edit_arg_edits_start(self, mocked_args):
+        args = [1, 'start', '14:13:12']
+        mocked_args.return_value = edit_args_dict('edit', args)
+        trackerian.main()
+        new_start = trackerian.Activity.instances[1].start.strftime('%H:%M:%S')
+        self.assertEqual(new_start, '14:13:12')
+
+    @patch('trackerian.parse_arguments')
+    def test_edit_arg_edits_end(self, mocked_args):
+        args = [0, 'end', '17:18:19']
+        mocked_args.return_value = edit_args_dict('edit', args)
+        trackerian.main()
+        new_end = trackerian.Activity.instances[0].end.strftime('%H:%M:%S')
+        self.assertEqual(new_end, '17:18:19')
+
 
 class TestMainSummary(unittest.TestCase):
     """Tests for how main() deals with summary args."""

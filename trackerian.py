@@ -289,11 +289,31 @@ def main():
         info_to_edit = args['edit'][1]
         new_value = args['edit'][2:]
 
-        if info_to_edit in ('Name', 'name', 'n'):
+        if info_to_edit.lower() in ('name', 'n'):
             Activity.instances[num_to_edit].name = new_value[0].title()
 
-        elif info_to_edit in ('Tag', 'tag', 't'):
+        elif info_to_edit.lower() in ('tag', 't'):
             Activity.instances[num_to_edit].tags = new_value
+
+        elif info_to_edit.lower() in ('start', 's'):
+            new_start = new_value[0]
+            current_start = Activity.instances[num_to_edit].start
+            replaced_start = current_start.replace(
+                hour=int(new_start[0:2]),
+                minute=int(new_start[3:5]),
+                second=int(new_start[6:])
+            )
+            Activity.instances[num_to_edit].start = replaced_start
+
+        elif info_to_edit.lower() in ('end', 'e'):
+            new_end = new_value[0]
+            current_end = Activity.instances[num_to_edit].start
+            replaced_end = current_end.replace(
+                hour=int(new_end[0:2]),
+                minute=int(new_end[3:5]),
+                second=int(new_end[6:])
+            )
+            Activity.instances[num_to_edit].end = replaced_end
 
     print()
     return
