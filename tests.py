@@ -262,6 +262,33 @@ class TestMainTag(unittest.TestCase):
         )
 
 
+class TestMainEdit(unittest.TestCase):
+    """Tests for how main() deals with edit args."""
+
+    def setUp(self):
+        """Instantiate two Activity members one finished one running."""
+        trackerian.Activity('Finished Activity')
+        trackerian.Activity.instances[0].end_activity()
+        trackerian.Activity('Running Activity')
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to empty list."""
+        trackerian.Activity.instances = []
+
+    @patch('trackerian.parse_arguments')
+    def test_edit_arg_edits_name(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('edit', [0, 'name', 'new'])
+        trackerian.main()
+        self.assertEqual(trackerian.Activity.instances[0].name, 'New')
+
+    @patch('trackerian.parse_arguments')
+    def test_edit_arg_edits_tags(self, mocked_args):
+        args = [1, 'tag', 'Should', 'Be', 'Tag', 'List']
+        mocked_args.return_value = edit_args_dict('edit', args)
+        trackerian.main()
+        self.assertEqual(trackerian.Activity.instances[1].tags, args[2:])
+
+
 class TestMainSummary(unittest.TestCase):
     """Tests for how main() deals with summary args."""
 
@@ -519,9 +546,10 @@ def edit_args_dict(key, new_value):
         'begin': None,
         'finish': False,
         'current': False,
-        'summary': False,
+        'summary': None,
         'list': False,
         'tag': None,
+        'edit': None,
     }
     defaulted_args_dict[key] = new_value
     return defaulted_args_dict

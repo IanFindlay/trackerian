@@ -41,6 +41,11 @@ def parse_arguments(args):
     parser.add_argument('-t', '--tag', metavar='tag', nargs='*',
                         help='Add one word tag(s) to latest activity')
 
+    parser.add_argument('-e', '--edit', nargs='*',
+                        help='Edit a tracked activity with args:\n'
+                        '{number} {category} {new value(s)}\n'
+                        'Example: --edit 1 name New')
+
     if not args:
         parser.print_help()
         return None
@@ -278,6 +283,17 @@ def main():
 
     elif args['finish']:
         Activity.instances[-1].end_activity()
+
+    elif args['edit']:
+        num_to_edit = int(args['edit'][0])
+        info_to_edit = args['edit'][1]
+        new_value = args['edit'][2:]
+
+        if info_to_edit in ('Name', 'name', 'n'):
+            Activity.instances[num_to_edit].name = new_value[0].title()
+
+        elif info_to_edit in ('Tag', 'tag', 't'):
+            Activity.instances[num_to_edit].tags = new_value
 
     print()
     return
