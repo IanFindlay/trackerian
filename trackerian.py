@@ -84,14 +84,16 @@ class Activity:
 
     def __str__(self):
         if not self.end:
-            return '({} - Tracking)  {:<20} Duration: {}'.format(
+            return '({} - Tracking)  {:<20} Duration: {:<10} {}'.format(
                 self.start_str, self.name,
-                str_format_timedelta(self.return_current_duration())
+                str_format_timedelta(self.return_current_duration()),
+                ", ".join(self.tags)
             )
 
-        return '({} - {})  {:<20} Duration: {}'.format(
+        return '({} - {})  {:<20} Duration: {:<10} {}'.format(
             self.start_str, self.end_str, self.name,
-            str_format_timedelta(self.duration)
+            str_format_timedelta(self.duration),
+            ", ".join(self.tags)
         )
 
     def end_activity(self):

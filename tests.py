@@ -159,9 +159,9 @@ class TestMainList(unittest.TestCase):
 
     def setUp(self):
         """Create two instances of Activity class one of which has ended."""
-        trackerian.Activity('First Activity')
+        trackerian.Activity('Finished Activity')
         trackerian.Activity.instances[0].end_activity()
-        trackerian.Activity('Second Activity')
+        trackerian.Activity('Running Activity')
 
     def tearDown(self):
         """Restore trackerian's Activity instances to empty list."""
@@ -169,17 +169,17 @@ class TestMainList(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_prints_name_of_first_activity(self, mocked_args, mocked_stdout):
+    def test_prints_name_of_finished_activity(self, mocked_args, mocked_stdout):
         mocked_args.return_value = edit_args_dict('list', True)
         trackerian.main()
-        self.assertIn('First Activity', mocked_stdout.getvalue())
+        self.assertIn('Finished Activity', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_prints_name_of_second_activity(self, mocked_args, mocked_stdout):
+    def test_prints_name_of_running_activity(self, mocked_args, mocked_stdout):
         mocked_args.return_value = edit_args_dict('list', True)
         trackerian.main()
-        self.assertIn('Second Activity', mocked_stdout.getvalue())
+        self.assertIn('Running Activity', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
@@ -190,6 +190,22 @@ class TestMainList(unittest.TestCase):
             str(trackerian.Activity.instances[0].duration).split('.')[0],
             mocked_stdout.getvalue()
         )
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_prints_tags_on_finished(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('list', True)
+        trackerian.Activity.instances[0].tags = ['Tags']
+        trackerian.main()
+        self.assertIn('Tags', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_prints_tags_on_running(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('list', True)
+        trackerian.Activity.instances[-1].tags = ['Testing']
+        trackerian.main()
+        self.assertIn('Testing', mocked_stdout.getvalue())
 
 
 class TestMainTag(unittest.TestCase):
@@ -478,7 +494,7 @@ class TestStrFormatTimedelta(unittest.TestCase):
 
 
 class TestPercentageOfTimedelta(unittest.TestCase):
-    """."""
+    """Tests for percentage_of_timedelta_function."""
 
     def test_returns_correct_percentage(self):
         total = datetime.timedelta(hours=1)
