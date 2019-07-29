@@ -121,7 +121,7 @@ class Activity:
         return current_time - self.start
 
     def update_datetime(self, to_edit, new_value):
-        """Update a datetime value for this instance with a new value.
+        """Update a datetime value with a new value and update related values.
 
         Args:
             new_value (str): String of a time formatted HH:MM:SS.
@@ -130,12 +130,17 @@ class Activity:
         hours, minutes, seconds = [int(x) for x in new_value.split(':')]
         if to_edit == 'start':
             self.start = self.start.replace(
-                hour=hours, minute=minutes, second=seconds
+                hour=hours, minute=minutes, second=seconds, microsecond=0
             )
+            self.start_str = new_value
+
         elif to_edit == 'end':
             self.end = self.start.replace(
-                hour=hours, minute=minutes, second=seconds
+                hour=hours, minute=minutes, second=seconds, microsecond=0
             )
+            self.end_str = new_value
+
+        self.duration = self.end - self.start
 
 
 def get_current_time():

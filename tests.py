@@ -169,14 +169,14 @@ class TestMainList(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_prints_name_of_finished_activity(self, mocked_args, mocked_stdout):
+    def test_prints_finished_activity_name(self, mocked_args, mocked_stdout):
         mocked_args.return_value = edit_args_dict('list', True)
         trackerian.main()
         self.assertIn('Finished Activity', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_prints_name_of_running_activity(self, mocked_args, mocked_stdout):
+    def test_running_activity_name(self, mocked_args, mocked_stdout):
         mocked_args.return_value = edit_args_dict('list', True)
         trackerian.main()
         self.assertIn('Running Activity', mocked_stdout.getvalue())
@@ -527,6 +527,40 @@ class TestUpdateDatetimeActivityClassMethod(unittest.TestCase):
         trackerian.Activity.instances[0].update_datetime('start', '17:18:19')
         new_start = trackerian.Activity.instances[0].start.strftime('%H:%M:%S')
         self.assertEqual(new_start, '17:18:19')
+
+    def test_end_argument_updates_end_str_variable(self):
+        trackerian.Activity.instances[0].update_datetime('end', '10:09:08')
+        self.assertEqual(
+            trackerian.Activity.instances[0].end_str, '10:09:08'
+        )
+
+    def test_start_argument_updates_start_str_variable(self):
+        trackerian.Activity.instances[0].update_datetime('start', '05:06:07')
+        self.assertEqual(
+            trackerian.Activity.instances[0].start_str, '05:06:07'
+        )
+
+    def test_end_argument_updates_duration_variable(self):
+        start = datetime.datetime.now().replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        trackerian.Activity.instances[0].start = start
+        trackerian.Activity.instances[0].update_datetime('end', '12:00:00')
+        duration_timedelta = datetime.timedelta(hours=3)
+        self.assertEqual(
+            trackerian.Activity.instances[0].duration, duration_timedelta
+        )
+
+    def test_start_argument_updates_duration_variable(self):
+        end = datetime.datetime.now().replace(
+            hour=13, minute=0, second=0, microsecond=0
+        )
+        trackerian.Activity.instances[0].end = end
+        trackerian.Activity.instances[0].update_datetime('start', '08:00:00')
+        duration_timedelta = datetime.timedelta(hours=5)
+        self.assertEqual(
+            trackerian.Activity.instances[0].duration, duration_timedelta
+        )
 
 
 class TestStrFormatDatetime(unittest.TestCase):
