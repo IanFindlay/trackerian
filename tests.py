@@ -312,23 +312,37 @@ class TestMainEdit(unittest.TestCase):
 class TestMainSummary(unittest.TestCase):
     """Tests for how main() deals with summary args."""
 
-    @patch('trackerian.print_summary')
+    @patch('trackerian.calculate_summary_date_range_start')
     @patch('trackerian.parse_arguments')
-    def test_day_passes_today_datetime_to_print_summary(self, mocked_args,
-                                                        mocked_summary):
+    def test_day_passes_day_to_calculate_summary(self, mocked_args,
+                                                 mocked_calculate):
         mocked_args.return_value = edit_args_dict('summary', 'day')
         trackerian.main()
-        passed_datetime = mocked_summary.call_args[0][0]
-        datetime_difference = passed_datetime - datetime.datetime.now()
-        self.assertTrue(datetime_difference <= datetime.timedelta(hours=24))
+        self.assertEqual(mocked_calculate.call_args[0][0], 'day')
 
-    @patch('trackerian.print_summary')
+    @patch('trackerian.calculate_summary_date_range_start')
     @patch('trackerian.parse_arguments')
-    def test_no_arg_passed_to_print_summary_with_all_arg(self, mocked_args,
-                                                         mocked_summary):
+    def test_all_passed_to_caclculate_summary_with_no_arg(self, mocked_args,
+                                                          mocked_calculate):
         mocked_args.return_value = edit_args_dict('summary', 'all')
         trackerian.main()
-        self.assertEqual(mocked_summary.call_args[0], ())
+        self.assertEqual(mocked_calculate.call_args[0][0], 'all')
+
+
+class TestCalculateSummaryDateRangeStart(unittest.TestCase):
+    """Tests for calculate_summary_date_range_start function."""
+
+    def test_return_none_when_all_arg_passed(self):
+        test_return = trackerian.calculate_summary_date_range_start('all')
+        self.assertEqual(test_return, None)
+
+    @patch('trackerian.get_current_datetime')
+    def test_return_early_today_datetime_when_day_arg(self, mocked_date):
+        mocked_date.return_value = datetime.datetime(2018, 12, 12, 12, 12, 12)
+        test_return = trackerian.calculate_summary_date_range_start('day')
+        eight_today = datetime.datetime(2018, 12, 12, 8, 0, 0)
+        yesterday_night = datetime.datetime(2018, 12, 11, 23, 59)
+        self.assertTrue(yesterday_night < test_return < eight_today)
 
 
 class TestPrintSummary(unittest.TestCase):
@@ -362,27 +376,27 @@ class TestPrintSummary(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_prints_number_of_tracked(self, mocked_stdout):
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         self.assertIn('Activities Tracked: 3', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.Activity.return_current_duration')
     def test_prints_total_time(self, mocked_duration, mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(minutes=15)
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         self.assertIn('01:15:00', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_activities_grouped_by_name(self, mocked_stdout):
         trackerian.Activity('30Minutes')
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         word_count = collections.Counter(mocked_stdout.getvalue().split())
         self.assertTrue(word_count['30Minutes'] == 1)
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_name_grouping_case_insensitive(self, mocked_stdout):
         trackerian.Activity('30MINUTES')
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         word_count = collections.Counter(mocked_stdout.getvalue().split())
         self.assertTrue(word_count['30MINUTES'] == 0)
 
@@ -390,7 +404,7 @@ class TestPrintSummary(unittest.TestCase):
     @patch('trackerian.Activity.return_current_duration')
     def test_name_grouped_duration_shown(self, mocked_duration, mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(minutes=60)
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         # Activity 3 given 1 min current duration so total isn't same as name
         self.assertIn('01:00:00', mocked_stdout.getvalue())
 
@@ -399,13 +413,13 @@ class TestPrintSummary(unittest.TestCase):
     def test_name_grouped_percentage_printed(self, mocked_duration,
                                              mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(minutes=15)
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         # Activity 3 given 15 min current duration (20%)
         self.assertIn('20.00%', mocked_stdout.getvalue())
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_tags_printed(self, mocked_stdout):
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         self.assertIn('TagOne', mocked_stdout.getvalue())
         self.assertIn('TagTwo', mocked_stdout.getvalue())
 
@@ -413,7 +427,7 @@ class TestPrintSummary(unittest.TestCase):
     @patch('trackerian.Activity.return_current_duration')
     def test_tag_grouped_duration(self, mocked_duration, mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(minutes=10)
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         # Activity 3 given 10 minutes current duration so tag one = 01:10:00
         self.assertIn('01:10:00', mocked_stdout.getvalue())
 
@@ -422,7 +436,7 @@ class TestPrintSummary(unittest.TestCase):
     def test_tag_grouped_percentage_printed(self, mocked_duration,
                                             mocked_stdout):
         mocked_duration.return_value = datetime.timedelta(hours=1)
-        trackerian.print_summary()
+        trackerian.print_summary(None)
         # Activity 3 given 1 hour so Tagtwo percentage will be (50.00%)
         self.assertIn('50.00%', mocked_stdout.getvalue())
 

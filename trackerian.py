@@ -180,7 +180,29 @@ def unpickle_activities():
         return pickle.load(pickled_file)
 
 
-def print_summary(date_range_start=None):
+def calculate_summary_date_range_start(time_period):
+    """Return earliest date that would be within the give time period.
+
+    Args:
+        time_period (str): String indicating the length of the period.
+
+    Returns:
+        None if time_period is 'all'.
+        datetime object of start of the current day if time_period is 'day'.
+
+    """
+    if time_period == 'all':
+        return None
+
+    day_start_hour = 4
+    day_start_minute = 0
+    today = get_current_datetime()
+    day_start = today.replace(hour=day_start_hour, minute=day_start_minute)
+
+    return day_start
+
+
+def print_summary(date_range_start):
     """Print summary of tracked activities.
 
     Activities and their total durations are grouped by name and,
@@ -267,8 +289,6 @@ def edit_activity(activity_to_edit, info_to_edit, new_value):
 
 def main():
     """Coordinate creation and time tracking of activities."""
-    day_start_hour = 4
-    day_start_minute = 0
     args = parse_arguments(sys.argv[1:])
 
     print()
@@ -285,13 +305,7 @@ def main():
             print()
 
     elif args['summary']:
-        if args['summary'] == 'day':
-            today = datetime.datetime.now()
-            day_start = today.replace(hour=day_start_hour,
-                                      minute=day_start_minute)
-            print_summary(day_start)
-        else:
-            print_summary()
+        print_summary(calculate_summary_date_range_start(args['summary']))
 
     # Args below IndexError if there are no Activity instances so catch here
     try:
