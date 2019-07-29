@@ -16,8 +16,6 @@ def parse_arguments(args):
         args (list): List of arguments and associated values to parse.
 
     Returns:
-        None if args argument evaluates to False.
-
         Dictionary of arguments and their post-parsed values.
 
     """
@@ -48,7 +46,6 @@ def parse_arguments(args):
 
     if not args:
         parser.print_help()
-        return None
 
     return vars(parser.parse_args(args))
 
@@ -269,8 +266,6 @@ def main():
     day_start_hour = 4
     day_start_minute = 0
     args = parse_arguments(sys.argv[1:])
-    if not args:
-        return
 
     print()
 
