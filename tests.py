@@ -76,6 +76,16 @@ class TestMainBegin(unittest.TestCase):
         trackerian.main()
         self.assertEqual(trackerian.Activity.instances[0].name, 'Split Name')
 
+    @patch('trackerian.get_current_datetime')
+    @patch('trackerian.parse_arguments')
+    def test_instantiates_activity_with_formatted_start_str(self, mocked_args,
+                                                            mocked_time):
+        mocked_args.return_value = edit_args_dict('begin', ['String'])
+        mocked_time.return_value = datetime.datetime(2018, 11, 12, 21, 22, 23)
+        trackerian.main()
+        instance_start_str = trackerian.Activity.instances[0].start_str
+        self.assertEqual(instance_start_str, '21:22:23')
+
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
     def test_prints_about_task_start(self, mocked_args, mocked_stdout):
@@ -445,7 +455,7 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
-    @patch('trackerian.get_current_time')
+    @patch('trackerian.get_current_datetime')
     def test_end_variable_set_to_correct_datetime(self, mocked_time):
         end_datetime_object = datetime.datetime(2010, 10, 10, 10, 20, 00)
         mocked_time.return_value = end_datetime_object
@@ -453,7 +463,7 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         end = trackerian.Activity.instances[0].end
         self.assertEqual(end, end_datetime_object)
 
-    @patch('trackerian.get_current_time')
+    @patch('trackerian.get_current_datetime')
     def test_end_str_variable_set_correctly(self, mocked_time):
         end_datetime_object = datetime.datetime(2010, 10, 10, 10, 30, 00)
         mocked_time.return_value = end_datetime_object
@@ -461,7 +471,7 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         end_str = trackerian.Activity.instances[0].end_str
         self.assertEqual(end_str, '10:30:00')
 
-    @patch('trackerian.get_current_time')
+    @patch('trackerian.get_current_datetime')
     def test_duration_set_to_correct_timedelta(self, mocked_time):
         mocked_time.return_value = datetime.datetime(2010, 10, 10, 10, 40, 00)
         trackerian.Activity.instances[0].end_activity()
@@ -469,7 +479,7 @@ class TestEndActivityActivityClassMethod(unittest.TestCase):
         self.assertEqual(duration, datetime.timedelta(0, 1800))
 
     @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('trackerian.get_current_time')
+    @patch('trackerian.get_current_datetime')
     def test_activity_duration_printed(self, mocked_time, mocked_stdout):
         mocked_time.return_value = datetime.datetime(2010, 10, 10, 11, 40, 00)
         trackerian.Activity.instances[0].end_activity()
@@ -495,7 +505,7 @@ class TestReturnCurrentDurationActivityClassMethod(unittest.TestCase):
         """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
-    @patch('trackerian.get_current_time')
+    @patch('trackerian.get_current_datetime')
     def test_returns_accurate_timedelta_object(self, mocked_time):
         mocked_time.side_effect = [
             datetime.datetime(2012, 12, 12, 12, 30, 00),
@@ -561,14 +571,6 @@ class TestUpdateDatetimeActivityClassMethod(unittest.TestCase):
         self.assertEqual(
             trackerian.Activity.instances[0].duration, duration_timedelta
         )
-
-
-class TestStrFormatDatetime(unittest.TestCase):
-    """Tests for str_format_datetime function."""
-
-    def test_returns_correct_str_formatted_HH_MM_SS(self):
-        test_date = datetime.datetime(2014, 4, 4, 4, 40, 00)
-        self.assertEqual(trackerian.str_format_datetime(test_date), '04:40:00')
 
 
 class TestStrFormatTimedelta(unittest.TestCase):

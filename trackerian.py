@@ -79,8 +79,8 @@ class Activity:
         """
         self.name = name.title()
         self.tags = []
-        self.start = get_current_time()
-        self.start_str = str_format_datetime(self.start)
+        self.start = get_current_datetime()
+        self.start_str = self.start.strftime('%H:%M:%S')
         self.end = None
         self.end_str = None
         self.duration = None
@@ -105,8 +105,8 @@ class Activity:
         """Set end and duration then print end confirmation."""
         print()
         if not self.end:
-            self.end = get_current_time()
-            self.end_str = str_format_datetime(self.end)
+            self.end = get_current_datetime()
+            self.end_str = self.end.strftime('%H:%M:%S')
             self.duration = self.end - self.start
             print('Tracking of {} Finished \t Duration: {}'.format(
                 self.name, str_format_timedelta(self.duration)
@@ -117,7 +117,7 @@ class Activity:
 
     def return_current_duration(self):
         """Calculate and return timedelta of activity time tracked so far."""
-        current_time = get_current_time()
+        current_time = get_current_datetime()
         return current_time - self.start
 
     def update_datetime(self, to_edit, new_value):
@@ -143,22 +143,9 @@ class Activity:
         self.duration = self.end - self.start
 
 
-def get_current_time():
+def get_current_datetime():
     """Return datetime object of the current time."""
     return datetime.datetime.now()
-
-
-def str_format_datetime(datetime_object):
-    """Return formatted datetime object string.
-
-    Args:
-        datetime_object (datetime): Datetime time object.
-
-    Returns:
-        Str of datetime object formatted HH:MM:SS.
-
-    """
-    return datetime_object.strftime('%H:%M:%S')
 
 
 def str_format_timedelta(timedelta_object):
