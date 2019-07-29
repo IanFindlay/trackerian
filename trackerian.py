@@ -242,6 +242,28 @@ def percentage_of_timedelta(total, duration):
     return '{:.2%}'.format(proportion)
 
 
+def edit_activity(activity_to_edit, info_to_edit, new_value):
+    """Edit Activity information.
+
+    Args:
+        activity_to_edit (class member): The Activity to edit
+        info_to_edit (str): String representing which variable to edit
+        new_value (list): List containing the new value(s) for the variable
+
+    """
+    if info_to_edit.lower() in ('name', 'n'):
+        activity_to_edit.name = new_value[0].title()
+
+    elif info_to_edit.lower() in ('tag', 't'):
+        activity_to_edit.tags = new_value
+
+    elif info_to_edit.lower() in ('end', 'e'):
+        activity_to_edit.update_datetime('end', new_value[0])
+
+    elif info_to_edit.lower() in ('start', 's'):
+        activity_to_edit.update_datetime('start', new_value[0])
+
+
 def main():
     """Coordinate creation and time tracking of activities."""
     day_start_hour = 4
@@ -297,18 +319,7 @@ def main():
         activity_to_edit = Activity.instances[int(args['edit'][0])]
         info_to_edit = args['edit'][1]
         new_value = args['edit'][2:]
-
-        if info_to_edit.lower() in ('name', 'n'):
-            activity_to_edit.name = new_value[0].title()
-
-        elif info_to_edit.lower() in ('tag', 't'):
-            activity_to_edit.tags = new_value
-
-        elif info_to_edit.lower() in ('end', 'e'):
-            activity_to_edit.update_datetime('end', new_value[0])
-
-        elif info_to_edit.lower() in ('start', 's'):
-            activity_to_edit.update_datetime('start', new_value[0])
+        edit_activity(activity_to_edit, info_to_edit, new_value)
 
     print()
     return

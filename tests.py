@@ -174,7 +174,7 @@ class TestMainList(unittest.TestCase):
         trackerian.Activity('Running Activity')
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
     @patch('sys.stdout', new_callable=io.StringIO)
@@ -226,7 +226,7 @@ class TestMainTag(unittest.TestCase):
         trackerian.Activity('Running')
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
     @patch('trackerian.parse_arguments')
@@ -276,45 +276,37 @@ class TestMainEdit(unittest.TestCase):
     """Tests for how main() deals with edit args."""
 
     def setUp(self):
-        """Instantiate two Activity members one finished one running."""
-        trackerian.Activity('Finished Activity')
-        trackerian.Activity.instances[0].end_activity()
-        trackerian.Activity('Running Activity')
+        """Instantiate two different activities"""
+        trackerian.Activity('Activity Zero')
+        trackerian.Activity('Activity One')
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
+    @patch('trackerian.edit_activity')
     @patch('trackerian.parse_arguments')
-    def test_name_arg_edits_name(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('edit', [0, 'name', 'new'])
+    def test_correct_activity_argument_passed(self, mocked_args, mocked_edit):
+        mocked_args.return_value = edit_args_dict('edit', ['0', 'name', 'new'])
         trackerian.main()
-        self.assertEqual(trackerian.Activity.instances[0].name, 'New')
+        correct_activity = trackerian.Activity.instances[0]
+        self.assertEqual(mocked_edit.call_args[0][0], correct_activity)
 
+    @patch('trackerian.edit_activity')
     @patch('trackerian.parse_arguments')
-    def test_tag_arg_edits_tags(self, mocked_args):
-        args = [1, 'tag', 'Should', 'Be', 'Tag', 'List']
-        mocked_args.return_value = edit_args_dict('edit', args)
+    def test_correct_info_argument_passed(self, mocked_args, mocked_edit):
+        mocked_args.return_value = edit_args_dict('edit', ['1', 'tag', 'test'])
         trackerian.main()
-        self.assertEqual(trackerian.Activity.instances[1].tags, args[2:])
+        self.assertEqual(mocked_edit.call_args[0][1], 'tag')
 
-    @patch('trackerian.Activity.update_datetime')
+    @patch('trackerian.edit_activity')
     @patch('trackerian.parse_arguments')
-    def test_end_arg_calls_update_datetime_with_right_args(self, mocked_args,
-                                                           mocked_update):
-        args = [0, 'end', '15:16:17']
-        mocked_args.return_value = edit_args_dict('edit', args)
+    def test_correct_new_value_argument_passed(self, mocked_args, mocked_edit):
+        mocked_args.return_value = edit_args_dict(
+            'edit', ['0', 'end', '11:22:44']
+        )
         trackerian.main()
-        self.assertEqual(mocked_update.call_args[0], ('end', '15:16:17'))
-
-    @patch('trackerian.Activity.update_datetime')
-    @patch('trackerian.parse_arguments')
-    def test_start_arg_calls_update_datetime_with_right_args(self, mocked_args,
-                                                             mocked_update):
-        args = [0, 'start', '18:19:20']
-        mocked_args.return_value = edit_args_dict('edit', args)
-        trackerian.main()
-        self.assertEqual(mocked_update.call_args[0], ('start', '18:19:20'))
+        self.assertEqual(mocked_edit.call_args[0][2], ['11:22:44'])
 
 
 class TestMainSummary(unittest.TestCase):
@@ -365,7 +357,7 @@ class TestPrintSummary(unittest.TestCase):
         trackerian.Activity.instances[-1].tags = ['TagOne', 'TagTwo']
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
     @patch('sys.stdout', new_callable=io.StringIO)
@@ -440,6 +432,47 @@ class TestPrintSummary(unittest.TestCase):
         trackerian.Activity('Alone')
         trackerian.print_summary(date_range_start)
         self.assertNotIn('30Minutes', mocked_stdout.getvalue())
+
+
+class TestEditActivity(unittest.TestCase):
+    """Tests for edit_activity function."""
+
+    def setUp(self):
+        """Instantiate two Activity members one finished one running."""
+        trackerian.Activity('Finished Activity')
+        trackerian.Activity.instances[0].end_activity()
+        trackerian.Activity('Running Activity')
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to an empty list."""
+        trackerian.Activity.instances = []
+
+    def test_name_arg_edits_name(self):
+        trackerian.edit_activity(
+            trackerian.Activity.instances[0], 'name', ['New']
+        )
+        self.assertEqual(trackerian.Activity.instances[0].name, 'New')
+
+    def test_tag_arg_edits_tags(self):
+        new_tags = ['List', 'Of', 'New', 'Tags']
+        trackerian.edit_activity(
+            trackerian.Activity.instances[1], 'tag', new_tags
+        )
+        self.assertEqual(trackerian.Activity.instances[1].tags, new_tags)
+
+    @patch('trackerian.Activity.update_datetime')
+    def test_end_arg_calls_update_with_right_args(self, mocked_update):
+        trackerian.edit_activity(
+            trackerian.Activity.instances[0], 'end', ['15:16:17']
+        )
+        self.assertEqual(mocked_update.call_args[0], ('end', '15:16:17'))
+
+    @patch('trackerian.Activity.update_datetime')
+    def test_start_arg_calls_update_with_right_args(self, mocked_update):
+        trackerian.edit_activity(
+            trackerian.Activity.instances[0], 'start', ['18:19:20']
+        )
+        self.assertEqual(mocked_update.call_args[0], ('start', '18:19:20'))
 
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
@@ -525,7 +558,7 @@ class TestUpdateDatetimeActivityClassMethod(unittest.TestCase):
         trackerian.Activity.instances[0].end_activity()
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
     def test_end_variable_updated_with_end_to_edit_argument_passed(self):
