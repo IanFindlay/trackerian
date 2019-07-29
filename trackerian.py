@@ -120,6 +120,23 @@ class Activity:
         current_time = get_current_time()
         return current_time - self.start
 
+    def update_datetime(self, to_edit, new_value):
+        """Update a datetime value for this instance with a new value.
+
+        Args:
+            new_value (str): String of a time formatted HH:MM:SS.
+            to_edit (str): Indicates which attribute to update.
+        """
+        hours, minutes, seconds = [int(x) for x in new_value.split(':')]
+        if to_edit == 'start':
+            self.start = self.start.replace(
+                hour=hours, minute=minutes, second=seconds
+            )
+        elif to_edit == 'end':
+            self.end = self.start.replace(
+                hour=hours, minute=minutes, second=seconds
+            )
+
 
 def get_current_time():
     """Return datetime object of the current time."""
@@ -285,35 +302,21 @@ def main():
         Activity.instances[-1].end_activity()
 
     elif args['edit']:
-        num_to_edit = int(args['edit'][0])
+        activity_to_edit = Activity.instances[int(args['edit'][0])]
         info_to_edit = args['edit'][1]
         new_value = args['edit'][2:]
 
         if info_to_edit.lower() in ('name', 'n'):
-            Activity.instances[num_to_edit].name = new_value[0].title()
+            activity_to_edit.name = new_value[0].title()
 
         elif info_to_edit.lower() in ('tag', 't'):
-            Activity.instances[num_to_edit].tags = new_value
-
-        elif info_to_edit.lower() in ('start', 's'):
-            new_start = new_value[0]
-            current_start = Activity.instances[num_to_edit].start
-            replaced_start = current_start.replace(
-                hour=int(new_start[0:2]),
-                minute=int(new_start[3:5]),
-                second=int(new_start[6:])
-            )
-            Activity.instances[num_to_edit].start = replaced_start
+            activity_to_edit.tags = new_value
 
         elif info_to_edit.lower() in ('end', 'e'):
-            new_end = new_value[0]
-            current_end = Activity.instances[num_to_edit].start
-            replaced_end = current_end.replace(
-                hour=int(new_end[0:2]),
-                minute=int(new_end[3:5]),
-                second=int(new_end[6:])
-            )
-            Activity.instances[num_to_edit].end = replaced_end
+            activity_to_edit.update_datetime('end', new_value[0])
+
+        elif info_to_edit.lower() in ('start', 's'):
+            activity_to_edit.update_datetime('start', new_value[0])
 
     print()
     return

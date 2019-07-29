@@ -276,33 +276,35 @@ class TestMainEdit(unittest.TestCase):
         trackerian.Activity.instances = []
 
     @patch('trackerian.parse_arguments')
-    def test_edit_arg_edits_name(self, mocked_args):
+    def test_name_arg_edits_name(self, mocked_args):
         mocked_args.return_value = edit_args_dict('edit', [0, 'name', 'new'])
         trackerian.main()
         self.assertEqual(trackerian.Activity.instances[0].name, 'New')
 
     @patch('trackerian.parse_arguments')
-    def test_edit_arg_edits_tags(self, mocked_args):
+    def test_tag_arg_edits_tags(self, mocked_args):
         args = [1, 'tag', 'Should', 'Be', 'Tag', 'List']
         mocked_args.return_value = edit_args_dict('edit', args)
         trackerian.main()
         self.assertEqual(trackerian.Activity.instances[1].tags, args[2:])
 
+    @patch('trackerian.Activity.update_datetime')
     @patch('trackerian.parse_arguments')
-    def test_edit_arg_edits_start(self, mocked_args):
-        args = [1, 'start', '14:13:12']
+    def test_end_arg_calls_update_datetime_with_right_args(self, mocked_args,
+                                                           mocked_update):
+        args = [0, 'end', '15:16:17']
         mocked_args.return_value = edit_args_dict('edit', args)
         trackerian.main()
-        new_start = trackerian.Activity.instances[1].start.strftime('%H:%M:%S')
-        self.assertEqual(new_start, '14:13:12')
+        self.assertEqual(mocked_update.call_args[0], ('end', '15:16:17'))
 
+    @patch('trackerian.Activity.update_datetime')
     @patch('trackerian.parse_arguments')
-    def test_edit_arg_edits_end(self, mocked_args):
-        args = [0, 'end', '17:18:19']
+    def test_start_arg_calls_update_datetime_with_right_args(self, mocked_args,
+                                                             mocked_update):
+        args = [0, 'start', '18:19:20']
         mocked_args.return_value = edit_args_dict('edit', args)
         trackerian.main()
-        new_end = trackerian.Activity.instances[0].end.strftime('%H:%M:%S')
-        self.assertEqual(new_end, '17:18:19')
+        self.assertEqual(mocked_update.call_args[0], ('start', '18:19:20'))
 
 
 class TestMainSummary(unittest.TestCase):
@@ -504,24 +506,39 @@ class TestReturnCurrentDurationActivityClassMethod(unittest.TestCase):
         self.assertEqual(duration, datetime.timedelta(0, 1800))
 
 
+class TestUpdateDatetimeActivityClassMethod(unittest.TestCase):
+    """Tests for update_datetime method of Activity class."""
+
+    def setUp(self):
+        """Instantiate an activity for editing."""
+        trackerian.Activity('To Edit')
+        trackerian.Activity.instances[0].end_activity()
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to empty list."""
+        trackerian.Activity.instances = []
+
+    def test_end_variable_updated_with_end_to_edit_argument_passed(self):
+        trackerian.Activity.instances[0].update_datetime('end', '14:13:12')
+        new_end = trackerian.Activity.instances[0].end.strftime('%H:%M:%S')
+        self.assertEqual(new_end, '14:13:12')
+
+    def test_start_variable_updated_with_start_to_edit_argument_passed(self):
+        trackerian.Activity.instances[0].update_datetime('start', '17:18:19')
+        new_start = trackerian.Activity.instances[0].start.strftime('%H:%M:%S')
+        self.assertEqual(new_start, '17:18:19')
+
+
 class TestStrFormatDatetime(unittest.TestCase):
     """Tests for str_format_datetime function."""
 
-    def test_returns_str(self):
+    def test_returns_correct_str_formatted_HH_MM_SS(self):
         test_date = datetime.datetime(2014, 4, 4, 4, 40, 00)
-        self.assertTrue(
-            isinstance(trackerian.str_format_datetime(test_date), str)
-        )
+        self.assertEqual(trackerian.str_format_datetime(test_date), '04:40:00')
 
 
 class TestStrFormatTimedelta(unittest.TestCase):
     """Test for str_format_timedelta function."""
-
-    def test_return_str(self):
-        test_delta = datetime.timedelta(0, 300)
-        self.assertTrue(
-            isinstance(trackerian.str_format_timedelta(test_delta), str)
-        )
 
     def test_zero_pads_hour(self):
         test_delta = datetime.timedelta(0, 300)
