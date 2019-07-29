@@ -19,30 +19,34 @@ def parse_arguments(args):
         Dictionary of arguments and their post-parsed values.
 
     """
-    parser = argparse.ArgumentParser(description="Command Line Time Tracker")
+    parser = argparse.ArgumentParser(
+        description="Command Line Time Tracker",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
 
     parser.add_argument('-b', '--begin', metavar='activity', nargs='*',
-                        help='Begin timing an activity with argument name')
+                        help="Begin timing an activity with argument name")
 
     parser.add_argument('-c', '--current', action='store_true',
-                        help='Print status of current activity')
+                        help="Print current tracking status")
 
     parser.add_argument('-f', '--finish', action='store_true',
-                        help='Finish timing the current activity')
+                        help="Finish timing the current activity")
 
     parser.add_argument('-l', '--list', action='store_true',
-                        help='Print list of tracked activities')
+                        help="Print list of tracked activities")
 
-    parser.add_argument('-s', '--summary', nargs='?', choices=['all', 'day'],
-                        const='day', help='Print summary of activities')
+    parser.add_argument('-s', '--summary', nargs='?',
+                        choices=['all', 'day'], const='day',
+                        help="Print summary of today's activties or all")
 
     parser.add_argument('-t', '--tag', metavar='tag', nargs='*',
-                        help='Add one word tag(s) to latest activity')
+                        help="Add one word tag(s) to latest activity")
 
     parser.add_argument('-e', '--edit', nargs='*',
-                        help='Edit a tracked activity with args:\n'
-                        '{number} {category} {new value(s)}\n'
-                        'Example: --edit 1 name New')
+                        help="Edit a tracked activity with args:\n"
+                        "{number} {category} {new value(s)}\n"
+                        "Example: --edit 1 name New")
 
     if not args:
         parser.print_help()
