@@ -322,6 +322,14 @@ class TestMainSummary(unittest.TestCase):
 
     @patch('trackerian.calculate_summary_date_range_start')
     @patch('trackerian.parse_arguments')
+    def test_week_passes_week_to_calculate_summary(self, mocked_args,
+                                                  mocked_calculate):
+        mocked_args.return_value = edit_args_dict('summary', 'week')
+        trackerian.main()
+        self.assertEqual(mocked_calculate.call_args[0][0], 'week')
+
+    @patch('trackerian.calculate_summary_date_range_start')
+    @patch('trackerian.parse_arguments')
     def test_all_passed_to_caclculate_summary_with_no_arg(self, mocked_args,
                                                           mocked_calculate):
         mocked_args.return_value = edit_args_dict('summary', 'all')
@@ -343,6 +351,15 @@ class TestCalculateSummaryDateRangeStart(unittest.TestCase):
         eight_today = datetime.datetime(2018, 12, 12, 8, 0, 0)
         yesterday_night = datetime.datetime(2018, 12, 11, 23, 59)
         self.assertTrue(yesterday_night < test_return < eight_today)
+
+    @patch('trackerian.get_current_datetime')
+    def test_return_week_ago_datetime_when_week_arg(self, mocked_date):
+        mocked_date.return_value = datetime.datetime(2017, 10, 14, 14, 14, 14)
+        test_return = trackerian.calculate_summary_date_range_start('week')
+        print(test_return)
+        eight_days_ago = datetime.datetime(2017, 10, 6, 23, 59, 0)
+        early_week_ago = datetime.datetime(2017, 10, 7, 8, 0)
+        self.assertTrue(eight_days_ago < test_return < early_week_ago)
 
 
 class TestPrintSummary(unittest.TestCase):

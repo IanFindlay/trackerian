@@ -37,7 +37,7 @@ def parse_arguments(args):
                         help="Print list of tracked activities")
 
     parser.add_argument('-s', '--summary', nargs='?',
-                        choices=['all', 'day'], const='day',
+                        choices=['all', 'day', 'week'], const='day',
                         help="Print summary of today's activties or all")
 
     parser.add_argument('-t', '--tag', metavar='tag', nargs='*',
@@ -199,7 +199,10 @@ def calculate_summary_date_range_start(time_period):
     today = get_current_datetime()
     day_start = today.replace(hour=day_start_hour, minute=day_start_minute)
 
-    return day_start
+    if time_period == 'day':
+        return day_start
+
+    return day_start - datetime.timedelta(days=7)
 
 
 def print_summary(date_range_start):
