@@ -33,7 +33,8 @@ def parse_arguments(args):
     parser.add_argument('-f', '--finish', action='store_true',
                         help="Finish timing the current activity")
 
-    parser.add_argument('-l', '--list', action='store_true',
+    parser.add_argument('-l', '--list', nargs='?',
+                        choices=['all', 'day', 'week'], const='day',
                         help="Print list of tracked activities")
 
     parser.add_argument('-s', '--summary', nargs='?',
@@ -180,7 +181,7 @@ def unpickle_activities():
         return pickle.load(pickled_file)
 
 
-def calculate_summary_date_range_start(time_period):
+def calculate_date_range_start(time_period):
     """Return earliest date that would be within the give time period.
 
     Args:
@@ -205,6 +206,20 @@ def calculate_summary_date_range_start(time_period):
     return day_start - datetime.timedelta(days=7)
 
 
+def print_list(date_range_start):
+    """Print enumerated list of tracked activities since date_range_start.
+
+    Args:
+        date_range_start (Datetime): Datetime object. Defaults to None.
+        Activities with start datetimes earlier than this are enumerated
+        but not printed.
+    """
+    for num, activity in enumerate(Activity.instances):
+        if not date_range_start or activity.start >= date_range_start:
+            print("{:<5} {}".format(num, activity))
+            print()
+
+
 def print_summary(date_range_start):
     """Print summary of tracked activities.
 
@@ -225,7 +240,7 @@ def print_summary(date_range_start):
     total_time = datetime.timedelta()
 
     for activity in Activity.instances:
-        if date_range_start and activity.start < date_range_start:
+        if date_range_start and activity.start <= date_range_start:
             continue
         if activity.duration:
             duration_to_add = activity.duration
@@ -303,12 +318,10 @@ def main():
         print(Activity.instances[-1])
 
     elif args['list']:
-        for num, activity in enumerate(Activity.instances):
-            print("{:<5} {}".format(num, activity))
-            print()
+        print_list(calculate_date_range_start(args['list']))
 
     elif args['summary']:
-        print_summary(calculate_summary_date_range_start(args['summary']))
+        print_summary(calculate_date_range_start(args['summary']))
 
     # Args below IndexError if there are no Activity instances so catch here
     try:

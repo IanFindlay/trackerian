@@ -48,9 +48,21 @@ class TestParseArguments(unittest.TestCase):
             pass
         self.assertIn('invalid choice:', mocked_stderr.getvalue())
 
-    def test_list_stores_true_boolean_in_returned_dict(self):
+    def test_list_defaults_to_day(self):
         args = trackerian.parse_arguments(['--list'])
-        self.assertEqual(args['list'], True)
+        self.assertEqual(args['list'], 'day')
+
+    def test_list_stores_valid_choice_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--list', 'all'])
+        self.assertEqual(args['list'], 'all')
+
+    @patch('sys.stderr', new_callable=io.StringIO)
+    def test_list_invalid_choice_in_error(self, mocked_stderr):
+        try:
+            trackerian.parse_arguments(['--list', 'error'])
+        except:
+            pass
+        self.assertIn('invalid choice:', mocked_stderr.getvalue())
 
     def test_tag_stores_tag_list_in_returned_dict(self):
         args = trackerian.parse_arguments(['--tag', 'Args', 'Listed'])
@@ -165,57 +177,15 @@ class TestMainCurrent(unittest.TestCase):
 
 
 class TestMainList(unittest.TestCase):
-    """Tests for how main() deals with the list arg."""
+    """Tests for how main() deals with list args."""
 
-    def setUp(self):
-        """Create two instances of Activity class one of which has ended."""
-        trackerian.Activity('Finished Activity')
-        trackerian.Activity.instances[0].end_activity()
-        trackerian.Activity('Running Activity')
-
-    def tearDown(self):
-        """Restore trackerian's Activity instances to an empty list."""
-        trackerian.Activity.instances = []
-
-    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.calculate_date_range_start')
     @patch('trackerian.parse_arguments')
-    def test_prints_finished_activity_name(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('list', True)
+    def test_passes_arg_to_calculate_datetime(self, mocked_args,
+                                              mocked_calculate):
+        mocked_args.return_value = edit_args_dict('list', 'passed')
         trackerian.main()
-        self.assertIn('Finished Activity', mocked_stdout.getvalue())
-
-    @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('trackerian.parse_arguments')
-    def test_running_activity_name(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('list', True)
-        trackerian.main()
-        self.assertIn('Running Activity', mocked_stdout.getvalue())
-
-    @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('trackerian.parse_arguments')
-    def test_prints_duration_of_finished(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('list', True)
-        trackerian.main()
-        self.assertIn(
-            str(trackerian.Activity.instances[0].duration).split('.')[0],
-            mocked_stdout.getvalue()
-        )
-
-    @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('trackerian.parse_arguments')
-    def test_prints_tags_on_finished(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('list', True)
-        trackerian.Activity.instances[0].tags = ['Tags']
-        trackerian.main()
-        self.assertIn('Tags', mocked_stdout.getvalue())
-
-    @patch('sys.stdout', new_callable=io.StringIO)
-    @patch('trackerian.parse_arguments')
-    def test_prints_tags_on_running(self, mocked_args, mocked_stdout):
-        mocked_args.return_value = edit_args_dict('list', True)
-        trackerian.Activity.instances[-1].tags = ['Testing']
-        trackerian.main()
-        self.assertIn('Testing', mocked_stdout.getvalue())
+        self.assertEqual(mocked_calculate.call_args[0][0], 'passed')
 
 
 class TestMainTag(unittest.TestCase):
@@ -312,42 +282,26 @@ class TestMainEdit(unittest.TestCase):
 class TestMainSummary(unittest.TestCase):
     """Tests for how main() deals with summary args."""
 
-    @patch('trackerian.calculate_summary_date_range_start')
+    @patch('trackerian.calculate_date_range_start')
     @patch('trackerian.parse_arguments')
-    def test_day_passes_day_to_calculate_summary(self, mocked_args,
-                                                 mocked_calculate):
+    def test_passes_arg_to_calculate_date_range_start(self, mocked_args,
+                                                      mocked_calculate):
         mocked_args.return_value = edit_args_dict('summary', 'day')
         trackerian.main()
         self.assertEqual(mocked_calculate.call_args[0][0], 'day')
 
-    @patch('trackerian.calculate_summary_date_range_start')
-    @patch('trackerian.parse_arguments')
-    def test_week_passes_week_to_calculate_summary(self, mocked_args,
-                                                  mocked_calculate):
-        mocked_args.return_value = edit_args_dict('summary', 'week')
-        trackerian.main()
-        self.assertEqual(mocked_calculate.call_args[0][0], 'week')
-
-    @patch('trackerian.calculate_summary_date_range_start')
-    @patch('trackerian.parse_arguments')
-    def test_all_passed_to_caclculate_summary_with_no_arg(self, mocked_args,
-                                                          mocked_calculate):
-        mocked_args.return_value = edit_args_dict('summary', 'all')
-        trackerian.main()
-        self.assertEqual(mocked_calculate.call_args[0][0], 'all')
-
 
 class TestCalculateSummaryDateRangeStart(unittest.TestCase):
-    """Tests for calculate_summary_date_range_start function."""
+    """Tests for calculate_date_range_start function."""
 
     def test_return_none_when_all_arg_passed(self):
-        test_return = trackerian.calculate_summary_date_range_start('all')
+        test_return = trackerian.calculate_date_range_start('all')
         self.assertEqual(test_return, None)
 
     @patch('trackerian.get_current_datetime')
     def test_return_early_today_datetime_when_day_arg(self, mocked_date):
         mocked_date.return_value = datetime.datetime(2018, 12, 12, 12, 12, 12)
-        test_return = trackerian.calculate_summary_date_range_start('day')
+        test_return = trackerian.calculate_date_range_start('day')
         eight_today = datetime.datetime(2018, 12, 12, 8, 0, 0)
         yesterday_night = datetime.datetime(2018, 12, 11, 23, 59)
         self.assertTrue(yesterday_night < test_return < eight_today)
@@ -355,11 +309,68 @@ class TestCalculateSummaryDateRangeStart(unittest.TestCase):
     @patch('trackerian.get_current_datetime')
     def test_return_week_ago_datetime_when_week_arg(self, mocked_date):
         mocked_date.return_value = datetime.datetime(2017, 10, 14, 14, 14, 14)
-        test_return = trackerian.calculate_summary_date_range_start('week')
+        test_return = trackerian.calculate_date_range_start('week')
         print(test_return)
         eight_days_ago = datetime.datetime(2017, 10, 6, 23, 59, 0)
         early_week_ago = datetime.datetime(2017, 10, 7, 8, 0)
         self.assertTrue(eight_days_ago < test_return < early_week_ago)
+
+
+class TestPrintList(unittest.TestCase):
+    """Tests for print_list function."""
+
+    def setUp(self):
+        """Create two instances of Activity class one of which has ended."""
+        trackerian.Activity('Finished Activity')
+        trackerian.Activity.instances[0].end_activity()
+        trackerian.Activity('Running Activity')
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to an empty list."""
+        trackerian.Activity.instances = []
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_prints_finished_activity_name(self, mocked_stdout):
+        trackerian.print_list(None)
+        self.assertIn('Finished Activity', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_prints_running_activity_name(self, mocked_stdout):
+        trackerian.print_list(None)
+        self.assertIn('Running Activity', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_prints_duration_of_finished(self, mocked_stdout):
+        trackerian.print_list(None)
+        self.assertIn(
+            str(trackerian.Activity.instances[0].duration).split('.')[0],
+            mocked_stdout.getvalue()
+        )
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_prints_tags_on_finished(self, mocked_stdout):
+        trackerian.Activity.instances[0].tags = ['Tags']
+        trackerian.print_list(None)
+        self.assertIn('Tags', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_prints_tags_on_running(self, mocked_stdout):
+        trackerian.Activity.instances[-1].tags = ['Testing']
+        trackerian.print_list(None)
+        self.assertIn('Testing', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_start_earlier_than_arg_datetime_not_printed(self, mocked_stdout):
+        date_range_start = datetime.datetime.now()
+        trackerian.print_list(date_range_start)
+        self.assertEqual('', mocked_stdout.getvalue())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_start_earlier_than_arg_still_enumerated(self, mocked_stdout):
+        date_range_start = datetime.datetime.now()
+        trackerian.Activity('Printed')
+        trackerian.print_list(date_range_start)
+        self.assertIn('2', mocked_stdout.getvalue())
 
 
 class TestPrintSummary(unittest.TestCase):
