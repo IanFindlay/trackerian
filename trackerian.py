@@ -337,7 +337,7 @@ def main():
     try:
         Activity.instances[-1]
     except IndexError:
-        print(" No activities have been tracked")
+        print("No activities have been tracked")
         return
 
     if args['tag']:
@@ -356,15 +356,12 @@ def main():
 
     elif args['edit']:
         try:
-            activity_num = int(args['edit'][0])
+            activity_to_edit = Activity.instances[int(args['edit'][0])]
         except ValueError:
             print("{} is not a valid integer.".format(args['edit'][0]))
             return
-
-        try:
-            activity_to_edit = Activity.instances[activity_num]
         except IndexError:
-            print("There is no activity at index {}.".format(activity_num))
+            print("There is no activity at index {}.".format(args['edit'][0]))
             return
 
         edit_activity(activity_to_edit, args['edit'][1], args['edit'][2:])

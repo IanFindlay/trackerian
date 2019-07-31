@@ -120,18 +120,21 @@ class TestMainFinish(unittest.TestCase):
         """Restore trackerian's Activity instances to a empty list."""
         trackerian.Activity.instances = []
 
-    # Ends activity through --finish
+    @patch('trackerian.Activity.end_activity')
     @patch('trackerian.parse_arguments')
-    def test_finish_adds_end_to_last_instance_if_not_ended(self, mocked_args):
+    def test_calls_end_activity(self, mocked_args, mocked_end):
         trackerian.Activity('To End')
         mocked_args.return_value = edit_args_dict('finish', True)
         trackerian.main()
-        self.assertTrue(trackerian.Activity.instances[-1].end)
+        self.assertTrue(mocked_end.called)
 
+    @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_finish_raises_index_error_when_no_instances(self, mocked_args):
+    def test_index_error_when_no_instances_handled(self, mocked_args,
+                                                   mocked_stdout):
         mocked_args.return_value = edit_args_dict('finish', True)
-        self.assertRaises(IndexError, trackerian.main())
+        trackerian.main()
+        self.assertIn('No activities', mocked_stdout.getvalue())
 
 
 class TestMainCurrent(unittest.TestCase):
@@ -144,8 +147,8 @@ class TestMainCurrent(unittest.TestCase):
     # Checks on current activity using --current and info is printed
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_current_prints_activity_name_if_not_ended(self, mocked_args,
-                                                       mocked_stdout):
+    def test_prints_activity_name_if_not_ended(self, mocked_args,
+                                               mocked_stdout):
         trackerian.Activity('Current Activity')
         mocked_args.return_value = edit_args_dict('current', True)
         trackerian.main()
@@ -153,8 +156,8 @@ class TestMainCurrent(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_current_prints_current_duration_if_not_ended(self, mocked_args,
-                                                          mocked_stdout):
+    def test_prints_current_duration_if_not_ended(self, mocked_args,
+                                                  mocked_stdout):
         trackerian.Activity('Current Activity')
         mocked_args.return_value = edit_args_dict('current', True)
         trackerian.main()
@@ -162,18 +165,21 @@ class TestMainCurrent(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_current_prints_message_if_no_activity_running(self, mocked_args,
-                                                           mocked_stdout):
+    def test_prints_message_if_no_activity_running(self, mocked_args,
+                                                   mocked_stdout):
         trackerian.Activity('Ended Activity')
         trackerian.Activity.instances[-1].end = True
         mocked_args.return_value = edit_args_dict('current', True)
         trackerian.main()
         self.assertIn('Not Tracking', mocked_stdout.getvalue())
 
+    @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_current_raises_index_error_when_no_instances(self, mocked_args):
+    def test_index_error_when_no_instances_handled(self, mocked_args,
+                                                   mocked_stdout):
         mocked_args.return_value = edit_args_dict('current', True)
-        self.assertRaises(IndexError, trackerian.main())
+        trackerian.main()
+        self.assertIn('No activities', mocked_stdout.getvalue())
 
 
 class TestMainList(unittest.TestCase):
@@ -278,26 +284,17 @@ class TestMainEdit(unittest.TestCase):
         trackerian.main()
         self.assertEqual(mocked_edit.call_args[0][2], ['11:22:44'])
 
-    @patch('trackerian.parse_arguments')
-    def test_invalid_int_activity_num_raises_value_error(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('edit', ['one', 'err', 'me'])
-        self.assertRaises(ValueError, trackerian.main())
-
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_invalid_int_prints_help(self, mocked_args, mocked_stdout):
+    def test_invalid_int_value_error_handled(self, mocked_args, mocked_stdout):
         mocked_args.return_value = edit_args_dict('edit', ['a', 'help', 'me'])
         trackerian.main()
         self.assertIn('integer', mocked_stdout.getvalue())
 
-    @patch('trackerian.parse_arguments')
-    def test_out_of_range_activity_num_raises_index_error(self, mocked_args):
-        mocked_args.return_value = edit_args_dict('edit', ['5', 'an', 'error'])
-        self.assertRaises(IndexError, trackerian.main())
-
     @patch('sys.stdout', new_callable=io.StringIO)
     @patch('trackerian.parse_arguments')
-    def test_out_of_range_prints_help(self, mocked_args, mocked_stdout):
+    def test_out_of_range_activity_num_index_error_handled(self, mocked_args,
+                                                           mocked_stdout):
         mocked_args.return_value = edit_args_dict('edit', ['9', 'print', 'me'])
         trackerian.main()
         self.assertIn('index', mocked_stdout.getvalue())
@@ -676,14 +673,8 @@ class TestUpdateDatetimeActivityClassMethod(unittest.TestCase):
             trackerian.Activity.instances[0].duration, duration_timedelta
         )
 
-    def test_invalid_time_arg_raises_value_error(self):
-        self.assertRaises(
-            ValueError,
-            trackerian.Activity.instances[0].update_datetime('end', '25:61:61')
-        )
-
     @patch('sys.stdout', new_callable=io.StringIO)
-    def test_invalid_time_arg_prints_help(self, mocked_stdout):
+    def test_invalid_time_value_error_handled(self, mocked_stdout):
         trackerian.Activity.instances[0].update_datetime('end', '24:60:61')
         self.assertIn('invalid', mocked_stdout.getvalue())
 
