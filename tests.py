@@ -278,6 +278,30 @@ class TestMainEdit(unittest.TestCase):
         trackerian.main()
         self.assertEqual(mocked_edit.call_args[0][2], ['11:22:44'])
 
+    @patch('trackerian.parse_arguments')
+    def test_invalid_int_activity_num_raises_value_error(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('edit', ['one', 'err', 'me'])
+        self.assertRaises(ValueError, trackerian.main())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_invalid_int_prints_help(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('edit', ['a', 'help', 'me'])
+        trackerian.main()
+        self.assertIn('integer', mocked_stdout.getvalue())
+
+    @patch('trackerian.parse_arguments')
+    def test_out_of_range_activity_num_raises_index_error(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('edit', ['5', 'an', 'error'])
+        self.assertRaises(IndexError, trackerian.main())
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_out_of_range_prints_help(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('edit', ['9', 'print', 'me'])
+        trackerian.main()
+        self.assertIn('index', mocked_stdout.getvalue())
+
 
 class TestMainSummary(unittest.TestCase):
     """Tests for how main() deals with summary args."""
@@ -516,6 +540,11 @@ class TestEditActivity(unittest.TestCase):
         )
         self.assertEqual(mocked_update.call_args[0], ('start', '18:19:20'))
 
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_unknown_edit_category_prints_help_message(self, mocked_stdout):
+        trackerian.edit_activity(trackerian.Activity.instances[0], 'no', 'cat')
+        self.assertIn('Information', mocked_stdout.getvalue())
+
 
 class TestEndActivityActivityClassMethod(unittest.TestCase):
     """Tests for end_activity method of Activity class."""
@@ -646,6 +675,17 @@ class TestUpdateDatetimeActivityClassMethod(unittest.TestCase):
         self.assertEqual(
             trackerian.Activity.instances[0].duration, duration_timedelta
         )
+
+    def test_invalid_time_arg_raises_value_error(self):
+        self.assertRaises(
+            ValueError,
+            trackerian.Activity.instances[0].update_datetime('end', '25:61:61')
+        )
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_invalid_time_arg_prints_help(self, mocked_stdout):
+        trackerian.Activity.instances[0].update_datetime('end', '24:60:61')
+        self.assertIn('invalid', mocked_stdout.getvalue())
 
 
 class TestStrFormatTimedelta(unittest.TestCase):

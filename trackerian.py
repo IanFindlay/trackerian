@@ -129,6 +129,12 @@ class Activity:
             new_value (str): String of a time formatted HH:MM:SS.
             to_edit (str): Indicates which attribute to update.
         """
+        try:
+            datetime.datetime.strptime(new_value, '%H:%M:%S')
+        except ValueError:
+            print("New time invalid. Format should be HH:MM:SS")
+            return
+
         hours, minutes, seconds = [int(x) for x in new_value.split(':')]
         if to_edit == 'start':
             self.start = self.start.replace(
@@ -304,6 +310,10 @@ def edit_activity(activity_to_edit, info_to_edit, new_value):
     elif info_to_edit.lower() in ('start', 's'):
         activity_to_edit.update_datetime('start', new_value[0])
 
+    else:
+        print("Information category {} not recognised. Choose from: "
+              "'name', 'tag', 'end' or 'start'.".format(info_to_edit))
+
 
 def main():
     """Coordinate creation and time tracking of activities."""
@@ -345,10 +355,19 @@ def main():
         Activity.instances[-1].end_activity()
 
     elif args['edit']:
-        activity_to_edit = Activity.instances[int(args['edit'][0])]
-        info_to_edit = args['edit'][1]
-        new_value = args['edit'][2:]
-        edit_activity(activity_to_edit, info_to_edit, new_value)
+        try:
+            activity_num = int(args['edit'][0])
+        except ValueError:
+            print("{} is not a valid integer.".format(args['edit'][0]))
+            return
+
+        try:
+            activity_to_edit = Activity.instances[activity_num]
+        except IndexError:
+            print("There is no activity at index {}.".format(activity_num))
+            return
+
+        edit_activity(activity_to_edit, args['edit'][1], args['edit'][2:])
 
     print()
     return
