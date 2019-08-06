@@ -68,12 +68,16 @@ class TestParseArguments(unittest.TestCase):
         args = trackerian.parse_arguments(['--tag', 'Args', 'Listed'])
         self.assertEqual(args['tag'], ['Args', 'Listed'])
 
+    def test_remove_stores_integer_in_returned_dict(self):
+        args = trackerian.parse_arguments(['--remove', '1'])
+        self.assertEqual(args['remove'], 1)
+
 
 class TestMainBegin(unittest.TestCase):
     """Tests for how main() deals with the begin arg."""
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to a empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
     @patch('trackerian.parse_arguments')
@@ -117,7 +121,7 @@ class TestMainFinish(unittest.TestCase):
     """Tests for how main() deals with the finish arg."""
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to a empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
     @patch('trackerian.Activity.end_activity')
@@ -137,11 +141,45 @@ class TestMainFinish(unittest.TestCase):
         self.assertIn('No activities', mocked_stdout.getvalue())
 
 
+class TestMainRemove(unittest.TestCase):
+    """Tests for how main() deals with the remove arg."""
+
+    def setUp(self):
+        """Instantiate an ended and a running activity."""
+        trackerian.Activity('Finished')
+        trackerian.Activity.instances[0].end_activity()
+        trackerian.Activity('Running')
+
+    def tearDown(self):
+        """Restore trackerian's Activity instances to an empty list."""
+        trackerian.Activity.instances = []
+
+    @patch('trackerian.parse_arguments')
+    def test_removes_finished_activity(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('remove', 0)
+        trackerian.main()
+        self.assertTrue(trackerian.Activity.instances[0].name == 'Running')
+
+    @patch('trackerian.parse_arguments')
+    def test_removes_running_activity(self, mocked_args):
+        mocked_args.return_value = edit_args_dict('remove', 1)
+        trackerian.main()
+        self.assertTrue(len(trackerian.Activity.instances) == 1)
+        self.assertTrue(trackerian.Activity.instances[0].name == 'Finished')
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    @patch('trackerian.parse_arguments')
+    def test_index_error_prints_help(self, mocked_args, mocked_stdout):
+        mocked_args.return_value = edit_args_dict('remove', 5)
+        trackerian.main()
+        self.assertIn('index', mocked_stdout.getvalue())
+
+
 class TestMainCurrent(unittest.TestCase):
     """Tests for how main() deals with the current arg."""
 
     def tearDown(self):
-        """Restore trackerian's Activity instances to a empty list."""
+        """Restore trackerian's Activity instances to an empty list."""
         trackerian.Activity.instances = []
 
     @patch('sys.stdout', new_callable=io.StringIO)
@@ -736,6 +774,7 @@ def edit_args_dict(key, new_value):
         'list': False,
         'tag': None,
         'edit': None,
+        'remove': None,
     }
     defaulted_args_dict[key] = new_value
     return defaulted_args_dict

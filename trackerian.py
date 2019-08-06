@@ -49,6 +49,9 @@ def parse_arguments(args):
                         "{number} {category} {new value(s)}\n"
                         "Example: --edit 1 name New")
 
+    parser.add_argument('-r', '--remove', metavar='activity number', type=int,
+                        help="Permanently remove an activity")
+
     if not args:
         parser.print_help()
 
@@ -351,6 +354,12 @@ def main():
 
     elif args['finish']:
         Activity.instances[-1].end_activity()
+
+    elif args['remove'] is not None:
+        try:
+            del Activity.instances[args['remove']]
+        except IndexError:
+            print("There is no activity at index {}.".format(args['remove']))
 
     elif args['edit']:
         try:
