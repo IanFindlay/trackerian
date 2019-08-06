@@ -57,6 +57,7 @@ Activities with typos in their names, missing tags or inaccurate times can inval
     python3 trackerian.py --edit [activity number] [information category] [new value(s)]
     
 **_activity number_** is the number displayed on the left hand side of the activity you wish to edit when using the `--list` argument. 
+
 **_information category_** is the type of information you want to edit. There are four categories:
 * name - The name of the activity.
 * start - The time the activity was started. 
