@@ -79,7 +79,7 @@ class Activity:
             name (str): Name of the activity.
 
         """
-        self.name = name.title()
+        self.name = name
         self.tags = []
         self.start = get_current_datetime()
         self.start_str = self.start.strftime('%H:%M:%S')
@@ -254,10 +254,10 @@ def print_summary(date_range_start):
             duration_to_add = activity.return_current_duration()
 
         total_time += duration_to_add
-        activity_durations[activity.name] += duration_to_add
+        activity_durations[activity.name.title()] += duration_to_add
 
         for tag in activity.tags:
-            tag_durations[tag] += duration_to_add
+            tag_durations[tag.title()] += duration_to_add
 
     print('Activities Tracked: {} | Total Time Tracked: {}'.format(
         len(Activity.instances), str_format_timedelta(total_time)
@@ -341,9 +341,7 @@ def main():
         return
 
     if args['tag']:
-        Activity.instances[-1].tags.extend(
-            [tag.title() for tag in args['tag']]
-        )
+        Activity.instances[-1].tags.extend(args['tag'])
 
     elif args['current']:
         if Activity.instances[-1].end:
@@ -367,7 +365,6 @@ def main():
         edit_activity(activity_to_edit, args['edit'][1], args['edit'][2:])
 
     print()
-    return
 
 
 if __name__ == '__main__':
