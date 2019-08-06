@@ -2,15 +2,16 @@
 ## Use the Command-Line to Keep Track of Your Time
 Easily keep track of your daily activities and see summarised data of how your day/week/overall time is broken down. Summaries display the percentage of tracked time each activity accounts by both the name of the activity and the tags you associated with it.
 
-### Installation
+### INSTALLATION
 Installation is as simple as cloning the repository, or at the very least downloading the trackerian file, to your computer.
 
     git clone https://github.com/IFinners/trackerian.git
 
-### Usage Instructions
+### USAGE INSTRUCTIONS
 To use the program navigate to the folder you downloaded the repository/file to and run it using Python 3
 
-**TRACKING,TAGGING AND FINISHING ACTIVITIES**
+
+**Tracking, Tagging and Finishing Activities**
 
 To start tracking an activity simply use the `-b` `--begin` argument:
 
@@ -30,7 +31,7 @@ To finish tracking an activity either begin tracking a new activity or use the `
 
 This activity is now safely completed with its **_name_**, **_tags_**, **_start time_**, **_end time_** and **_duration_** calculated and ready to be used for summaries.
 
-**ACTIVITY SUMMARIES AND LISTS**
+**Activity Summaries and Lists**
 
 Summaries are invoked with the `-s` `--summary` arguments. Three values can be passed to `--summary`:
 **_day_** will summarise activities tracked during the current day (since 04:00) and is the default value so will be invoked by passing `--summary` with no additional argument.
@@ -49,7 +50,7 @@ From this list you can tell what, if anything, is currently being tracked but th
 
     python3 trackerian.py --current
 
-**EDITING AND REMOVING ACTIVITIES**
+**Editing and Removing Activities**
 
 Activities with typos in their names, missing tags or inaccurate times can invalidate the summaries and that is why you can edit all of the pertinent information about any activity. This is done through the `-e` `--edit` arguments and works as follows.
 
@@ -74,6 +75,6 @@ If for any reason you need to remove an activity from your history, including th
 
     python3 trackerian.py --remove [activity number]
 
-**FURTHER HELP**
+**Further Help**
 
 With the information above, you should have no trouble using Trackerian and making the most out of your time but feel free to raise any issues on the repository page. A condensed help message for all of these arguments can be invoked by passing the `-h` `--help` argument or running the program with no arguments given.
