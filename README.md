@@ -11,6 +11,7 @@ Installation is as simple as cloning the repository, or at the very least downlo
 To use the program navigate to the folder you downloaded the repository/file to and run it using Python 3
 
 **TRACKING,TAGGING AND FINISHING ACTIVITIES**
+
 To start tracking an activity simply use the `-b` `--begin` argument:
 
     python3 trackerian.py --begin Write Readme
@@ -30,6 +31,7 @@ To finish tracking an activity either begin tracking a new activity or use the `
 This activity is now safely completed with its **_name_**, **_tags_**, **_start time_**, **_end time_** and **_duration_** calculated and ready to be used for summaries.
 
 **ACTIVITY SUMMARIES AND LISTS**
+
 Summaries are invoked with the `-s` `--summary` arguments. Three values can be passed to `--summary`:
 **_day_** will summarise activities tracked during the current day (since 04:00) and is the default value so will be invoked by passing `--summary` with no additional argument.
 **_week_** will summaries activities tracked within the last seven days.
@@ -47,7 +49,8 @@ From this list you can tell what, if anything, is currently being tracked but th
 
     python3 trackerian.py --current
 
-**EDITING ACTIVITIES**
+**EDITING AND REMOVING ACTIVITIES**
+
 Activities with typos in their names, missing tags or inaccurate times can invalidate the summaries and that is why you can edit all of the pertinent information about any activity. This is done through the `-e` `--edit` arguments and works as follows.
 
     python3 trackerian.py --edit [activity number] [information category] [new value(s)]
@@ -67,5 +70,10 @@ For example to change the 'Write Readme' activity name you would:
 
     python3 trackerian.py --edit 0 name Writing Readme
 
+If for any reason you need to remove an activity from your history, including the one you are currently tracking, you can use the `-r` `--remove` argument:
+
+    python3 trackerian.py --remove [activity number]
+
 **FURTHER HELP**
+
 With the information above, you should have no trouble using Trackerian and making the most out of your time but feel free to raise any issues on the repository page. A condensed help message for all of these arguments can be invoked by passing the `-h` `--help` argument or running the program with no arguments given.
