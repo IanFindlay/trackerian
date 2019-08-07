@@ -204,10 +204,8 @@ def calculate_date_range_start(time_period):
     if time_period == 'all':
         return None
 
-    day_start_hour = 4
-    day_start_minute = 0
     today = get_current_datetime()
-    day_start = today.replace(hour=day_start_hour, minute=day_start_minute)
+    day_start = today.replace(hour=0, minute=0)
 
     if time_period == 'day':
         return day_start
