@@ -34,7 +34,7 @@ This activity is now safely completed with its **_name_**, **_tags_**, **_start 
 **Activity Summaries and Lists**
 
 Summaries are invoked with the `-s` `--summary` arguments. Three values can be passed to `--summary`:
-**_day_** will summarise activities tracked during the current day (since 04:00) and is the default value so will be invoked by passing `--summary` with no additional argument.
+**_day_** will summarise activities tracked during the current day (since 00:00) and is the default value so will be invoked by passing `--summary` with no additional argument.
 **_week_** will summaries activities tracked within the last seven days.
 **_all_** will summaries all activities that you have tracked while using Trackerian.
 
